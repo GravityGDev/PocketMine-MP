@@ -103,6 +103,10 @@ class Lava extends Liquid{
 	}
 
 	public function onEntityInside(Entity $entity) : bool{
+		if(!$this->isEntityInsideFluid($entity)){
+			return true;
+		}
+
 		$ev = new EntityDamageByBlockEvent($this, $entity, EntityDamageEvent::CAUSE_LAVA, 4);
 		$entity->attack($ev);
 
