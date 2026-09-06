@@ -70,17 +70,38 @@ class SubChunk{
 	public function getEmptyBlockId() : int{ return $this->emptyBlockId; }
 
 	public function getBlockStateId(int $x, int $y, int $z) : int{
-		if(count($this->blockLayers) === 0){
-			return $this->emptyBlockId;
-		}
-		return $this->blockLayers[0]->get($x, $y, $z);
+		return $this->getBlockStateIdAtLayer($x, $y, $z, 0);
 	}
 
 	public function setBlockStateId(int $x, int $y, int $z, int $block) : void{
-		if(count($this->blockLayers) === 0){
+		$this->setBlockStateIdAtLayer($x, $y, $z, 0, $block);
+	}
+
+	/**
+	 * Returns the blockstate at the given storage layer. Bedrock uses additional block layers for cases such as
+	 * waterlogged blocks. Missing layers are treated as air.
+	 */
+	public function getBlockStateIdAtLayer(int $x, int $y, int $z, int $layer) : int{
+		if($layer < 0){
+			throw new \InvalidArgumentException("Block layer must be non-negative");
+		}
+		return $this->blockLayers[$layer]?->get($x, $y, $z) ?? $this->emptyBlockId;
+	}
+
+	/**
+	 * Sets a blockstate on the given storage layer, creating intermediate empty layers when necessary.
+	 */
+	public function setBlockStateIdAtLayer(int $x, int $y, int $z, int $layer, int $block) : void{
+		if($layer < 0){
+			throw new \InvalidArgumentException("Block layer must be non-negative");
+		}
+		if($block === $this->emptyBlockId && $layer >= count($this->blockLayers)){
+			return;
+		}
+		while(count($this->blockLayers) <= $layer){
 			$this->blockLayers[] = new PalettedBlockArray($this->emptyBlockId);
 		}
-		$this->blockLayers[0]->set($x, $y, $z, $block);
+		$this->blockLayers[$layer]->set($x, $y, $z, $block);
 	}
 
 	/**
