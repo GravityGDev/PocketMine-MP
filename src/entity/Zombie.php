@@ -23,6 +23,10 @@ declare(strict_types=1);
 
 namespace pocketmine\entity;
 
+use pocketmine\entity\ai\goal\LookAtPlayerGoal;
+use pocketmine\entity\ai\goal\MeleeAttackGoal;
+use pocketmine\entity\ai\goal\NearestPlayerTargetGoal;
+use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
@@ -34,6 +38,13 @@ class Zombie extends Mob{
 
 	protected function getInitialSizeInfo() : EntitySizeInfo{
 		return new EntitySizeInfo(1.9, 0.6); //TODO: eye height ??
+	}
+
+	protected function registerGoals() : void{
+		$this->getTargetSelector()->addGoal(1, new NearestPlayerTargetGoal($this, 32.0));
+		$this->getGoalSelector()->addGoal(2, new MeleeAttackGoal($this, 0.1, 3.0, 1.8));
+		$this->getGoalSelector()->addGoal(7, new RandomStrollGoal($this, 0.08, 8, 80));
+		$this->getGoalSelector()->addGoal(8, new LookAtPlayerGoal($this, 8.0));
 	}
 
 	public function getName() : string{

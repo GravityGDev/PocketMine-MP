@@ -18,20 +18,25 @@ declare(strict_types=1);
 
 namespace pocketmine\entity;
 
+use pocketmine\entity\ai\control\JumpControl;
+use pocketmine\entity\ai\control\LookControl;
+use pocketmine\entity\ai\control\MoveControl;
 use pocketmine\entity\ai\goal\GoalSelector;
+use pocketmine\entity\ai\navigation\GroundNavigation;
 use pocketmine\nbt\tag\CompoundTag;
 
 /**
  * Base class for server-driven vanilla-style mobs.
- *
- * 5.46 introduces the goal scheduler first; navigation, sensing and natural
- * spawning are layered onto this class in subsequent development patches.
  */
 abstract class Mob extends Living{
 	private const TAG_NO_AI = "NoAI"; //TAG_Byte
 
 	private GoalSelector $goalSelector;
 	private GoalSelector $targetSelector;
+	private MoveControl $moveControl;
+	private LookControl $lookControl;
+	private JumpControl $jumpControl;
+	private GroundNavigation $navigation;
 	private bool $hasAi = true;
 
 	protected function initEntity(CompoundTag $nbt) : void{
@@ -40,6 +45,11 @@ abstract class Mob extends Living{
 		$this->hasAi = $nbt->getByte(self::TAG_NO_AI, 0) === 0;
 		$this->goalSelector = new GoalSelector();
 		$this->targetSelector = new GoalSelector();
+		$this->jumpControl = new JumpControl($this);
+		$this->moveControl = new MoveControl($this, $this->jumpControl);
+		$this->lookControl = new LookControl($this);
+		$this->navigation = new GroundNavigation($this);
+		$this->stepHeight = 0.6;
 		$this->registerGoals();
 	}
 
@@ -59,6 +69,12 @@ abstract class Mob extends Living{
 
 	public function setHasAi(bool $hasAi = true) : void{
 		$this->hasAi = $hasAi;
+		if(!$hasAi){
+			$this->goalSelector->clear();
+			$this->targetSelector->clear();
+			$this->navigation->stop();
+			$this->lookControl->clear();
+		}
 	}
 
 	public function getGoalSelector() : GoalSelector{
@@ -69,12 +85,32 @@ abstract class Mob extends Living{
 		return $this->targetSelector;
 	}
 
+	public function getMoveControl() : MoveControl{
+		return $this->moveControl;
+	}
+
+	public function getLookControl() : LookControl{
+		return $this->lookControl;
+	}
+
+	public function getJumpControl() : JumpControl{
+		return $this->jumpControl;
+	}
+
+	public function getNavigation() : GroundNavigation{
+		return $this->navigation;
+	}
+
 	protected function entityBaseTick(int $tickDiff = 1) : bool{
 		$hasUpdate = parent::entityBaseTick($tickDiff);
 
 		if($this->hasAi && $this->isAlive()){
 			$this->targetSelector->tick();
 			$this->goalSelector->tick();
+			$this->navigation->tick();
+			$this->moveControl->tick();
+			$this->lookControl->tick();
+			$this->jumpControl->tick();
 		}
 
 		return $hasUpdate;

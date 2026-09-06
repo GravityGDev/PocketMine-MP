@@ -19,9 +19,15 @@ This branch is the development line for restoring more vanilla Minecraft Bedrock
 - [x] Vanilla-compatible `NoAI` entity NBT support
 - [x] Zombie and Villager moved onto the new Mob base
 - [x] Unit coverage for selector priority and disabled controls
-- [ ] Movement and look controllers
-- [ ] Ground navigation and pathfinding
-- [ ] Sensing and target acquisition
+- [x] Movement, look and jump controllers
+- [x] First-stage direct ground navigation with collision jumping
+- [x] Nearest-player target acquisition
+- [x] Zombie pursuit, looking, melee attack cooldown and idle wandering
+- [ ] Terrain-aware A* pathfinding
+- [ ] Line-of-sight sensing and obstacle-aware targeting
+- [ ] Water/lava navigation and advanced movement controllers
+
+The current navigation layer intentionally uses direct ground steering. It is the testable movement foundation for the terrain-aware pathfinder; it is not being represented as complete vanilla pathfinding yet.
 
 ### Stage 2 - Natural spawning
 
@@ -33,7 +39,7 @@ This branch is the development line for restoring more vanilla Minecraft Bedrock
 
 ### Stage 3 - First vanilla mobs
 
-- [ ] Zombie
+- [~] Zombie - basic AI is present; daylight burning, equipment, doors and advanced pathfinding remain
 - [ ] Skeleton
 - [ ] Creeper
 - [ ] Spider
