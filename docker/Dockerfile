@@ -11,15 +11,15 @@ RUN ./compile.sh -t linux64 -j ${THREADS:-$(grep -E ^processor /proc/cpuinfo | w
 
 FROM ubuntu:22.04 AS build-pocketmine
 ARG GIT_HASH=""
-RUN test ! -z ${GIT_HASH} || (echo "Missing build-arg GIT_HASH" && false)
 
-RUN apt-get update && apt-get install --no-install-recommends -y curl ca-certificates 7zip
+RUN apt-get update && apt-get install --no-install-recommends -y curl ca-certificates 7zip git
 RUN mkdir /opt/pocketmine
 COPY --from=build-php /opt/pocketmine/bin /opt/pocketmine/bin
 RUN ln -s /opt/pocketmine/bin/php7/bin/php /usr/bin/php
 RUN curl -L https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/bin/composer
 
+COPY ./.git /opt/pocketmine/repo/.git
 COPY ./build/server-phar.php ./build/server-phar-stub.php /opt/pocketmine/repo/build/
 COPY ./resources /opt/pocketmine/repo/resources
 COPY ./src /opt/pocketmine/repo/src
@@ -28,7 +28,9 @@ COPY ./composer.json ./composer.lock /opt/pocketmine/repo/
 
 WORKDIR /opt/pocketmine/repo
 RUN composer install --classmap-authoritative --no-dev --prefer-dist
-RUN php -dphar.readonly=0 ./build/server-phar.php --git ${GIT_HASH}
+RUN RESOLVED_GIT_HASH="${GIT_HASH:-$(git rev-parse HEAD)}" && \
+    echo "Building PHAR for git revision ${RESOLVED_GIT_HASH}" && \
+    php -dphar.readonly=0 ./build/server-phar.php --git "${RESOLVED_GIT_HASH}"
 # Just to make sure the build script didn't false-positive-exit
 RUN test -f /opt/pocketmine/repo/PocketMine-MP.phar
 
