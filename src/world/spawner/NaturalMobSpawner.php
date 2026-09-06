@@ -30,6 +30,7 @@ use pocketmine\entity\Entity;
 use pocketmine\entity\HostileMob;
 use pocketmine\entity\Location;
 use pocketmine\entity\Skeleton;
+use pocketmine\entity\Spider;
 use pocketmine\entity\Zombie;
 use pocketmine\math\Facing;
 use pocketmine\player\Player;
@@ -53,10 +54,12 @@ final class NaturalMobSpawner{
 	private const ZOMBIE_WEIGHT = 100;
 	private const SKELETON_WEIGHT = 80;
 	private const CREEPER_WEIGHT = 80;
+	private const SPIDER_WEIGHT = 100;
 
 	private const MOB_ZOMBIE = 0;
 	private const MOB_SKELETON = 1;
 	private const MOB_CREEPER = 2;
+	private const MOB_SPIDER = 3;
 
 	public static function isHostileSpawningAllowed(int $difficulty) : bool{
 		return $difficulty >= World::DIFFICULTY_EASY && $difficulty <= World::DIFFICULTY_HARD;
@@ -123,7 +126,8 @@ final class NaturalMobSpawner{
 				$groupSize = match($mobType){
 					self::MOB_ZOMBIE => mt_rand(2, 4),
 					self::MOB_SKELETON => mt_rand(1, 2),
-					self::MOB_CREEPER => 1
+					self::MOB_CREEPER => 1,
+					self::MOB_SPIDER => mt_rand(1, 4)
 				};
 				$usedPositions = [];
 				for($member = 0; $member < $groupSize; ++$member){
@@ -169,7 +173,8 @@ final class NaturalMobSpawner{
 					$hostile = match($mobType){
 						self::MOB_ZOMBIE => new Zombie($location),
 						self::MOB_SKELETON => new Skeleton($location),
-						self::MOB_CREEPER => new Creeper($location)
+						self::MOB_CREEPER => new Creeper($location),
+						self::MOB_SPIDER => new Spider($location)
 					};
 					$hostile->setNaturallySpawned();
 					$hostile->spawnToAll();
@@ -181,14 +186,17 @@ final class NaturalMobSpawner{
 	}
 
 	private static function pickMobType() : int{
-		$roll = mt_rand(1, self::ZOMBIE_WEIGHT + self::SKELETON_WEIGHT + self::CREEPER_WEIGHT);
+		$roll = mt_rand(1, self::ZOMBIE_WEIGHT + self::SKELETON_WEIGHT + self::CREEPER_WEIGHT + self::SPIDER_WEIGHT);
 		if($roll <= self::ZOMBIE_WEIGHT){
 			return self::MOB_ZOMBIE;
 		}
 		if($roll <= self::ZOMBIE_WEIGHT + self::SKELETON_WEIGHT){
 			return self::MOB_SKELETON;
 		}
-		return self::MOB_CREEPER;
+		if($roll <= self::ZOMBIE_WEIGHT + self::SKELETON_WEIGHT + self::CREEPER_WEIGHT){
+			return self::MOB_CREEPER;
+		}
+		return self::MOB_SPIDER;
 	}
 
 	private static function findSpawnY(World $world, int $x, int $z, bool $surface, ?int $preferredY = null) : ?int{
