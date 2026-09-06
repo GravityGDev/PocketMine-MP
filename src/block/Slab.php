@@ -34,6 +34,8 @@ use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 
 class Slab extends Transparent implements Waterloggable{
+	use WaterloggableTrait;
+
 	protected SlabType $slabType = SlabType::BOTTOM;
 
 	public function __construct(BlockIdentifier $idInfo, string $name, BlockTypeInfo $typeInfo){
