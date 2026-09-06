@@ -26,6 +26,7 @@ use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\effect\VanillaEffects;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
+use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\player\Player;
 use function mt_rand;
@@ -72,6 +73,6 @@ class WitherSkeleton extends Skeleton{
 	}
 
 	public function getPickedItem() : ?Item{
-		return VanillaItems::WITHER_SKELETON_SPAWN_EGG();
+		return VanillaSpawnEggs::WITHER_SKELETON();
 	}
 }
