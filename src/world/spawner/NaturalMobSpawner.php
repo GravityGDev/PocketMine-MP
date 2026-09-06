@@ -25,6 +25,7 @@ namespace pocketmine\world\spawner;
 
 use pocketmine\block\Liquid;
 use pocketmine\block\utils\SupportType;
+use pocketmine\entity\Creeper;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Location;
 use pocketmine\entity\Skeleton;
@@ -50,6 +51,11 @@ final class NaturalMobSpawner{
 
 	private const ZOMBIE_WEIGHT = 100;
 	private const SKELETON_WEIGHT = 80;
+	private const CREEPER_WEIGHT = 80;
+
+	private const MOB_ZOMBIE = 0;
+	private const MOB_SKELETON = 1;
+	private const MOB_CREEPER = 2;
 
 	public static function isHostileSpawningAllowed(int $difficulty) : bool{
 		return $difficulty >= World::DIFFICULTY_EASY && $difficulty <= World::DIFFICULTY_HARD;
@@ -112,8 +118,12 @@ final class NaturalMobSpawner{
 					continue;
 				}
 
-				$spawnSkeletons = mt_rand(1, self::ZOMBIE_WEIGHT + self::SKELETON_WEIGHT) > self::ZOMBIE_WEIGHT;
-				$groupSize = $spawnSkeletons ? mt_rand(1, 2) : mt_rand(2, 4);
+				$mobType = self::pickMobType();
+				$groupSize = match($mobType){
+					self::MOB_ZOMBIE => mt_rand(2, 4),
+					self::MOB_SKELETON => mt_rand(1, 2),
+					self::MOB_CREEPER => 1
+				};
 				$usedPositions = [];
 				for($member = 0; $member < $groupSize; ++$member){
 					if($remainingCapacity <= 0 || $spawnedThisCycle >= self::MAX_SPAWNS_PER_CYCLE){
@@ -155,7 +165,11 @@ final class NaturalMobSpawner{
 
 					$usedPositions["$groupX:$groupY:$groupZ"] = true;
 					$location = new Location($groupX + 0.5, $groupY, $groupZ + 0.5, $world, (float) mt_rand(0, 359), 0.0);
-					$hostile = $spawnSkeletons ? new Skeleton($location) : new Zombie($location);
+					$hostile = match($mobType){
+						self::MOB_ZOMBIE => new Zombie($location),
+						self::MOB_SKELETON => new Skeleton($location),
+						self::MOB_CREEPER => new Creeper($location)
+					};
 					$hostile->setNaturallySpawned();
 					$hostile->spawnToAll();
 					--$remainingCapacity;
@@ -163,6 +177,17 @@ final class NaturalMobSpawner{
 				}
 			}
 		}
+	}
+
+	private static function pickMobType() : int{
+		$roll = mt_rand(1, self::ZOMBIE_WEIGHT + self::SKELETON_WEIGHT + self::CREEPER_WEIGHT);
+		if($roll <= self::ZOMBIE_WEIGHT){
+			return self::MOB_ZOMBIE;
+		}
+		if($roll <= self::ZOMBIE_WEIGHT + self::SKELETON_WEIGHT){
+			return self::MOB_SKELETON;
+		}
+		return self::MOB_CREEPER;
 	}
 
 	private static function findSpawnY(World $world, int $x, int $z, bool $surface, ?int $preferredY = null) : ?int{
@@ -239,7 +264,7 @@ final class NaturalMobSpawner{
 	}
 
 	private static function isNaturalHostile(Entity $entity) : bool{
-		return ($entity instanceof Zombie || $entity instanceof Skeleton) && $entity->isNaturallySpawned();
+		return ($entity instanceof Zombie || $entity instanceof Skeleton || $entity instanceof Creeper) && $entity->isNaturallySpawned();
 	}
 
 	/**
@@ -272,7 +297,7 @@ final class NaturalMobSpawner{
 
 	private static function despawnForPeaceful(World $world) : void{
 		foreach($world->getEntities() as $entity){
-			if(($entity instanceof Zombie || $entity instanceof Skeleton) && !$entity->isFlaggedForDespawn()){
+			if(($entity instanceof Zombie || $entity instanceof Skeleton || $entity instanceof Creeper) && !$entity->isFlaggedForDespawn()){
 				$entity->flagForDespawn();
 			}
 		}
