@@ -46,8 +46,8 @@ A mob is only considered complete when its relevant health/size/metadata, persis
 - [x] Endermite
 - [x] Husk
 - [x] Wither Skeleton
-- [ ] Drowned
-- [ ] Zombie Villager
+- [~] Drowned
+- [~] Zombie Villager
 - [~] Stray
 - [~] Bogged
 - [~] Parched
@@ -154,5 +154,7 @@ A mob is only considered complete when its relevant health/size/metadata, persis
 Cave Spiders are intentionally **not** in the ordinary natural monster pool; vanilla spawns them from mineshaft monster spawners. Endermites are also excluded from ordinary natural spawning and have the vanilla-style ender-pearl spawn chance plus timed despawn behaviour. Wither Skeletons are registered but will only become naturally obtainable once Nether-specific spawning is added.
 
 Stray, Bogged and Parched are now registered with their Bedrock network identifiers and core ranged combat. Their arrows apply the Bedrock-style Slowness, Poison and Weakness durations respectively, and Parched rejects Weakness effects. These remain partial until biome replacement/natural-spawn rules, equipment/tipped-arrow drops and their remaining special interactions or transformations are restored.
+
+Drowned and Zombie Villager are now registered with their Bedrock network identifiers and inherit the restored zombie combat/lifecycle base. Drowned can breathe both underwater and on land and uses a Drowned-specific rotten-flesh drop baseline instead of Zombie rare drops. Drowned remains partial until water/land navigation, trident and Nautilus-shell equipment/combat, ocean/river spawning, conversion and complete loot behaviour are restored. Zombie Villager remains partial until villager profession/variant metadata, curing conversion, spawn rules and its dedicated spawn egg are restored.
 
 This file should be updated as each mob moves from `[ ]` to `[~]` and finally `[x]` so the project never loses track of vanilla parity gaps.
