@@ -24,11 +24,15 @@ declare(strict_types=1);
 namespace pocketmine\item;
 
 use pocketmine\block\Block;
+use pocketmine\block\BlockTypeIds;
 use pocketmine\block\Lava;
 use pocketmine\block\Liquid;
+use pocketmine\block\Water;
+use pocketmine\block\Waterloggable;
 use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
+use pocketmine\world\WorldBlockLayerUtils;
 
 class LiquidBucket extends Item{
 	private Liquid $liquid;
@@ -55,13 +59,39 @@ class LiquidBucket extends Item{
 	}
 
 	public function onInteractBlock(Player $player, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, array &$returnedItems) : ItemUseResult{
+		$resultBlock = clone $this->liquid;
+
+		if($resultBlock instanceof Water && $blockClicked instanceof Waterloggable && $blockClicked->canBeWaterlogged()){
+			$pos = $blockClicked->getPosition();
+			$secondaryBlock = WorldBlockLayerUtils::getBlockAtLayer($player->getWorld(), $pos->getFloorX(), $pos->getFloorY(), $pos->getFloorZ(), 1);
+			if($secondaryBlock->getTypeId() === BlockTypeIds::AIR){
+				$ev = new PlayerBucketEmptyEvent($player, $blockClicked, $face, $this, VanillaItems::BUCKET());
+				$ev->call();
+				if($ev->isCancelled()){
+					return ItemUseResult::FAIL;
+				}
+
+				WorldBlockLayerUtils::setBlockAtLayer(
+					$player->getWorld(),
+					$pos->getFloorX(),
+					$pos->getFloorY(),
+					$pos->getFloorZ(),
+					1,
+					$resultBlock->getStillForm()
+				);
+				$player->getWorld()->addSound($pos->add(0.5, 0.5, 0.5), $resultBlock->getBucketEmptySound());
+
+				$this->pop();
+				$returnedItems[] = $ev->getItem();
+				return ItemUseResult::SUCCESS;
+			}
+		}
+
 		if(!$blockReplace->canBeReplaced()){
 			return ItemUseResult::NONE;
 		}
 
 		//TODO: move this to generic placement logic
-		$resultBlock = clone $this->liquid;
-
 		$ev = new PlayerBucketEmptyEvent($player, $blockReplace, $face, $this, VanillaItems::BUCKET());
 		$ev->call();
 		if(!$ev->isCancelled()){
