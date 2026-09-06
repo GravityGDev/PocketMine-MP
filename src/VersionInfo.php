@@ -91,8 +91,9 @@ final class VersionInfo{
 					self::$buildNumber = $meta["build"];
 				}
 			}
+		}
 
-			return self::$buildNumber;
+		return self::$buildNumber;
 	}
 
 	private static ?VersionString $fullVersion = null;
