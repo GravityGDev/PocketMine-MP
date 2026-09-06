@@ -56,6 +56,7 @@ final class ItemSerializer{
 	){
 		$this->registerSpecialBlockSerializers();
 		new ItemSerializerDeserializerRegistrar(null, $this);
+		ParitySpawnEggItemMappings::register(null, $this);
 	}
 
 	/**
