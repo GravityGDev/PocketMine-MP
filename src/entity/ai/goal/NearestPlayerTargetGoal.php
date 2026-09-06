@@ -25,9 +25,11 @@ use pocketmine\player\Player;
 final class NearestPlayerTargetGoal extends Goal{
 	private ?Player $candidate = null;
 
+	/** @phpstan-param (\Closure(Player) : bool)|null $acquireFilter */
 	public function __construct(
 		private Mob $mob,
-		private float $range = 32.0
+		private float $range = 32.0,
+		private ?\Closure $acquireFilter = null
 	){
 		$this->setFlags(self::FLAG_TARGET);
 	}
@@ -56,7 +58,7 @@ final class NearestPlayerTargetGoal extends Goal{
 		$nearestDistance = $this->range * $this->range;
 		$position = $this->mob->getPosition();
 		foreach($this->mob->getWorld()->getPlayers() as $player){
-			if(!$this->isValidTarget($player) || !$this->mob->canSee($player)){
+			if(!$this->isValidTarget($player) || ($this->acquireFilter !== null && !($this->acquireFilter)($player)) || !$this->mob->canSee($player)){
 				continue;
 			}
 
