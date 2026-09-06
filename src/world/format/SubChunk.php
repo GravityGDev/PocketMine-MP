@@ -85,7 +85,10 @@ class SubChunk{
 		if($layer < 0){
 			throw new \InvalidArgumentException("Block layer must be non-negative");
 		}
-		return $this->blockLayers[$layer]?->get($x, $y, $z) ?? $this->emptyBlockId;
+		if(!isset($this->blockLayers[$layer])){
+			return $this->emptyBlockId;
+		}
+		return $this->blockLayers[$layer]->get($x, $y, $z);
 	}
 
 	/**
