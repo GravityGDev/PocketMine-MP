@@ -365,8 +365,21 @@ final class ItemTypeIds{
 	public const CROSSBOW = 20326;
 	public const ELYTRA = 20327;
 	public const SHIELD = 20328;
+	public const BOGGED_SPAWN_EGG = 20329;
+	public const CAVE_SPIDER_SPAWN_EGG = 20330;
+	public const CREEPER_SPAWN_EGG = 20331;
+	public const DROWNED_SPAWN_EGG = 20332;
+	public const ENDERMITE_SPAWN_EGG = 20333;
+	public const HUSK_SPAWN_EGG = 20334;
+	public const PARCHED_SPAWN_EGG = 20335;
+	public const SILVERFISH_SPAWN_EGG = 20336;
+	public const SKELETON_SPAWN_EGG = 20337;
+	public const SPIDER_SPAWN_EGG = 20338;
+	public const STRAY_SPAWN_EGG = 20339;
+	public const WITHER_SKELETON_SPAWN_EGG = 20340;
+	public const ZOMBIE_VILLAGER_SPAWN_EGG = 20341;
 
-	public const FIRST_UNUSED_ITEM_ID = 20329;
+	public const FIRST_UNUSED_ITEM_ID = 20342;
 
 	private static int $nextDynamicId = self::FIRST_UNUSED_ITEM_ID;
 
