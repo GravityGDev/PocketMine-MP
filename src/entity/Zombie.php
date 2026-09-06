@@ -29,38 +29,14 @@ use pocketmine\entity\ai\goal\NearestPlayerTargetGoal;
 use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
-use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use function mt_rand;
 
 class Zombie extends Undead{
-	private const TAG_NATURALLY_SPAWNED = "NaturallySpawned"; //TAG_Byte
-
-	private bool $naturallySpawned = false;
-
 	public static function getNetworkTypeId() : string{ return EntityIds::ZOMBIE; }
 
 	protected function getInitialSizeInfo() : EntitySizeInfo{
 		return new EntitySizeInfo(1.9, 0.6); //TODO: eye height ??
-	}
-
-	protected function initEntity(CompoundTag $nbt) : void{
-		parent::initEntity($nbt);
-		$this->naturallySpawned = $nbt->getByte(self::TAG_NATURALLY_SPAWNED, 0) !== 0;
-	}
-
-	public function saveNBT() : CompoundTag{
-		$nbt = parent::saveNBT();
-		$nbt->setByte(self::TAG_NATURALLY_SPAWNED, $this->naturallySpawned ? 1 : 0);
-		return $nbt;
-	}
-
-	public function isNaturallySpawned() : bool{
-		return $this->naturallySpawned;
-	}
-
-	public function setNaturallySpawned(bool $naturallySpawned = true) : void{
-		$this->naturallySpawned = $naturallySpawned;
 	}
 
 	protected function registerGoals() : void{
