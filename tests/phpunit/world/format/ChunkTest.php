@@ -42,4 +42,17 @@ class ChunkTest extends TestCase{
 		self::assertNotSame($chunk->getBiomeId(0, 0, 0), $chunk2->getBiomeId(0, 0, 0));
 		self::assertNotSame($chunk->getHeightMap(0, 0), $chunk2->getHeightMap(0, 0));
 	}
+
+	public function testSecondaryBlockLayerStorage() : void{
+		$chunk = new Chunk([], false);
+		$chunk->clearTerrainDirtyFlags();
+
+		$chunk->setBlockStateId(1, 64, 2, 10);
+		$chunk->setBlockStateIdAtLayer(1, 64, 2, 1, 20);
+
+		self::assertSame(10, $chunk->getBlockStateId(1, 64, 2));
+		self::assertSame(10, $chunk->getBlockStateIdAtLayer(1, 64, 2, 0));
+		self::assertSame(20, $chunk->getBlockStateIdAtLayer(1, 64, 2, 1));
+		self::assertTrue($chunk->getTerrainDirtyFlag(Chunk::DIRTY_FLAG_BLOCKS));
+	}
 }
