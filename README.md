@@ -5,7 +5,6 @@ A community-maintained continuation of the archived **PocketMine-MP** server sof
 ## Current release
 
 - **GravityG-PocketMine-MP:** 5.45.0
-- **Minecraft display version:** v26.45
 - **Network version:** 1.26.45
 - **Protocol:** 2169
 - **Upstream base:** PocketMine-MP 5.44.3
