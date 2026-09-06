@@ -36,8 +36,9 @@ use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 
-class Stair extends Transparent implements HorizontalFacing{
+class Stair extends Transparent implements HorizontalFacing, Waterloggable{
 	use HorizontalFacingTrait;
+	use WaterloggableTrait;
 
 	protected bool $upsideDown = false;
 	protected StairShape $shape = StairShape::STRAIGHT;
@@ -45,6 +46,10 @@ class Stair extends Transparent implements HorizontalFacing{
 	protected function describeBlockOnlyState(RuntimeDataDescriber $w) : void{
 		$w->horizontalFacing($this->facing);
 		$w->bool($this->upsideDown);
+	}
+
+	public function canBeWaterlogged() : bool{
+		return true;
 	}
 
 	public function readStateFromWorld() : Block{
