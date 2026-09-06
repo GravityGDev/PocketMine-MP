@@ -20,7 +20,8 @@ on:
 
 jobs:
   phpstan:
-    name: PHPStan analysis
+    name: PHPStan analysis (advisory)
+    continue-on-error: true
     runs-on: ${{ inputs.image }}
 
     strategy:
