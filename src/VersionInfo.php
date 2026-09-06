@@ -32,7 +32,7 @@ use function str_repeat;
 final class VersionInfo{
 	public const NAME = "GravityG-PocketMine-MP";
 	public const BASE_VERSION = "5.44.3";
-	public const IS_DEVELOPMENT_BUILD = true;
+	public const IS_DEVELOPMENT_BUILD = false;
 	public const BUILD_CHANNEL = "stable";
 	public const GITHUB_URL = "https://github.com/GravityGDev/PocketMine-MP";
 
@@ -91,9 +91,8 @@ final class VersionInfo{
 					self::$buildNumber = $meta["build"];
 				}
 			}
-		}
 
-		return self::$buildNumber;
+			return self::$buildNumber;
 	}
 
 	private static ?VersionString $fullVersion = null;
