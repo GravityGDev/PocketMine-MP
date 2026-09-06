@@ -23,7 +23,7 @@ use pocketmine\entity\ai\goal\MeleeAttackGoal;
 use pocketmine\entity\ai\goal\NearestPlayerTargetGoal;
 use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\item\Item;
-use pocketmine\item\VanillaItems;
+use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 
@@ -82,6 +82,6 @@ class Endermite extends HostileMob{
 	}
 
 	public function getPickedItem() : ?Item{
-		return VanillaItems::ENDERMITE_SPAWN_EGG();
+		return VanillaSpawnEggs::ENDERMITE();
 	}
 }
