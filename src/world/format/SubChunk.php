@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\world\format;
 
 use function array_map;
+use function array_slice;
 use function count;
 
 class SubChunk{
@@ -154,15 +155,18 @@ class SubChunk{
 	}
 
 	public function collectGarbage() : void{
-		$cleanedLayers = [];
-		foreach($this->blockLayers as $layer){
+		$lastNonEmptyLayer = -1;
+		foreach($this->blockLayers as $index => $layer){
 			$layer->collectGarbage();
-
 			if($layer->getBitsPerBlock() !== 0 || $layer->get(0, 0, 0) !== $this->emptyBlockId){
-				$cleanedLayers[] = $layer;
+				$lastNonEmptyLayer = $index;
 			}
 		}
-		$this->blockLayers = $cleanedLayers;
+
+		//Storage-layer indices are semantic in Bedrock. In particular, layer 1 contains water for waterlogged blocks.
+		//Only trailing empty layers may be removed; removing an empty layer from the middle would shift every layer above
+		//it down and could turn secondary water into the primary block.
+		$this->blockLayers = $lastNonEmptyLayer >= 0 ? array_slice($this->blockLayers, 0, $lastNonEmptyLayer + 1) : [];
 		$this->biomes->collectGarbage();
 
 		if($this->skyLight !== null && $this->skyLight->isUniform(0)){
