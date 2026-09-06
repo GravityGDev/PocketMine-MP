@@ -26,6 +26,8 @@ use pocketmine\entity\effect\Effect;
 use pocketmine\entity\effect\EffectImmunity;
 use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\effect\VanillaEffects;
+use pocketmine\item\Item;
+use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 
@@ -61,5 +63,9 @@ class Parched extends Skeleton implements EffectImmunity{
 
 	public function getName() : string{
 		return "Parched";
+	}
+
+	public function getPickedItem() : ?Item{
+		return VanillaSpawnEggs::PARCHED();
 	}
 }
