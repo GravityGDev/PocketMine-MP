@@ -31,10 +31,9 @@ use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
-use pocketmine\world\World;
 use function mt_rand;
 
-class Zombie extends Mob{
+class Zombie extends Undead{
 	private const TAG_NATURALLY_SPAWNED = "NaturallySpawned"; //TAG_Byte
 
 	private bool $naturallySpawned = false;
@@ -69,14 +68,6 @@ class Zombie extends Mob{
 		$this->getGoalSelector()->addGoal(2, new MeleeAttackGoal($this, 0.1, 3.0, 1.8));
 		$this->getGoalSelector()->addGoal(7, new RandomStrollGoal($this, 0.08, 8, 80));
 		$this->getGoalSelector()->addGoal(8, new LookAtPlayerGoal($this, 8.0));
-	}
-
-	protected function entityBaseTick(int $tickDiff = 1) : bool{
-		if($this->getWorld()->getDifficulty() === World::DIFFICULTY_PEACEFUL){
-			$this->flagForDespawn();
-		}
-
-		return parent::entityBaseTick($tickDiff);
 	}
 
 	public function getName() : string{
