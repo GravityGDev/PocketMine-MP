@@ -19,6 +19,8 @@ A mob is only considered complete when its relevant health/size/metadata, persis
 - [x] Line-of-sight sensing
 - [x] Melee combat goal
 - [x] Ranged bow combat goal
+- [x] Ranged tipped-arrow status effects with NBT persistence
+- [x] Per-mob status-effect immunity hook
 - [x] Shared hostile-mob lifecycle and natural-spawn persistence
 - [x] Hostile mob cap/distance despawning
 - [x] Darkness checks for hostile natural spawning
@@ -46,9 +48,9 @@ A mob is only considered complete when its relevant health/size/metadata, persis
 - [x] Wither Skeleton
 - [ ] Drowned
 - [ ] Zombie Villager
-- [ ] Stray
-- [ ] Bogged
-- [ ] Parched
+- [~] Stray
+- [~] Bogged
+- [~] Parched
 - [ ] Slime
 - [ ] Magma Cube
 - [ ] Sulfur Cube
@@ -150,5 +152,7 @@ A mob is only considered complete when its relevant health/size/metadata, persis
 ## Current implementation notes
 
 Cave Spiders are intentionally **not** in the ordinary natural monster pool; vanilla spawns them from mineshaft monster spawners. Endermites are also excluded from ordinary natural spawning and have the vanilla-style ender-pearl spawn chance plus timed despawn behaviour. Wither Skeletons are registered but will only become naturally obtainable once Nether-specific spawning is added.
+
+Stray, Bogged and Parched are now registered with their Bedrock network identifiers and core ranged combat. Their arrows apply the Bedrock-style Slowness, Poison and Weakness durations respectively, and Parched rejects Weakness effects. These remain partial until biome replacement/natural-spawn rules, equipment/tipped-arrow drops and their remaining special interactions or transformations are restored.
 
 This file should be updated as each mob moves from `[ ]` to `[~]` and finally `[x]` so the project never loses track of vanilla parity gaps.
