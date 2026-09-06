@@ -25,7 +25,9 @@ namespace pocketmine\world\spawner;
 
 use pocketmine\block\Liquid;
 use pocketmine\block\utils\SupportType;
+use pocketmine\entity\Entity;
 use pocketmine\entity\Location;
+use pocketmine\entity\Skeleton;
 use pocketmine\entity\Zombie;
 use pocketmine\math\Facing;
 use pocketmine\player\Player;
@@ -40,11 +42,14 @@ final class NaturalMobSpawner{
 	private const SPAWN_INTERVAL_TICKS = 20;
 	private const ATTEMPTS_PER_PLAYER = 8;
 	private const MAX_SPAWNS_PER_CYCLE = 8;
-	private const MAX_NATURAL_ZOMBIES = 70;
+	private const MAX_NATURAL_HOSTILES = 70;
 	private const MIN_SPAWN_DISTANCE_SQUARED = 24 * 24;
 	private const MAX_SPAWN_DISTANCE_SQUARED = 128 * 128;
 	private const MAX_HOSTILE_LIGHT = 7;
 	private const UNDERGROUND_SEARCH_DEPTH = 24;
+
+	private const ZOMBIE_WEIGHT = 100;
+	private const SKELETON_WEIGHT = 80;
 
 	public static function isHostileSpawningAllowed(int $difficulty) : bool{
 		return $difficulty >= World::DIFFICULTY_EASY && $difficulty <= World::DIFFICULTY_HARD;
@@ -70,16 +75,16 @@ final class NaturalMobSpawner{
 			return;
 		}
 
-		self::despawnDistantNaturalZombies($world, $players);
+		self::despawnDistantNaturalHostiles($world, $players);
 
-		$naturalZombieCount = 0;
+		$naturalHostileCount = 0;
 		foreach($world->getEntities() as $entity){
-			if($entity instanceof Zombie && $entity->isNaturallySpawned() && !$entity->isFlaggedForDespawn()){
-				++$naturalZombieCount;
+			if(self::isNaturalHostile($entity) && !$entity->isFlaggedForDespawn()){
+				++$naturalHostileCount;
 			}
 		}
 
-		$remainingCapacity = self::MAX_NATURAL_ZOMBIES - $naturalZombieCount;
+		$remainingCapacity = self::MAX_NATURAL_HOSTILES - $naturalHostileCount;
 		if($remainingCapacity <= 0){
 			return;
 		}
@@ -107,7 +112,8 @@ final class NaturalMobSpawner{
 					continue;
 				}
 
-				$groupSize = mt_rand(2, 4);
+				$spawnSkeletons = mt_rand(1, self::ZOMBIE_WEIGHT + self::SKELETON_WEIGHT) > self::ZOMBIE_WEIGHT;
+				$groupSize = $spawnSkeletons ? mt_rand(1, 2) : mt_rand(2, 4);
 				$usedPositions = [];
 				for($member = 0; $member < $groupSize; ++$member){
 					if($remainingCapacity <= 0 || $spawnedThisCycle >= self::MAX_SPAWNS_PER_CYCLE){
@@ -148,9 +154,10 @@ final class NaturalMobSpawner{
 					}
 
 					$usedPositions["$groupX:$groupY:$groupZ"] = true;
-					$zombie = new Zombie(new Location($groupX + 0.5, $groupY, $groupZ + 0.5, $world, (float) mt_rand(0, 359), 0.0));
-					$zombie->setNaturallySpawned();
-					$zombie->spawnToAll();
+					$location = new Location($groupX + 0.5, $groupY, $groupZ + 0.5, $world, (float) mt_rand(0, 359), 0.0);
+					$hostile = $spawnSkeletons ? new Skeleton($location) : new Zombie($location);
+					$hostile->setNaturallySpawned();
+					$hostile->spawnToAll();
 					--$remainingCapacity;
 					++$spawnedThisCycle;
 				}
@@ -231,12 +238,16 @@ final class NaturalMobSpawner{
 		return $withinMaximum;
 	}
 
+	private static function isNaturalHostile(Entity $entity) : bool{
+		return ($entity instanceof Zombie || $entity instanceof Skeleton) && $entity->isNaturallySpawned();
+	}
+
 	/**
 	 * @param list<Player> $players
 	 */
-	private static function despawnDistantNaturalZombies(World $world, array $players) : void{
+	private static function despawnDistantNaturalHostiles(World $world, array $players) : void{
 		foreach($world->getEntities() as $entity){
-			if(!$entity instanceof Zombie || !$entity->isNaturallySpawned() || $entity->isFlaggedForDespawn()){
+			if(!self::isNaturalHostile($entity) || $entity->isFlaggedForDespawn()){
 				continue;
 			}
 
@@ -261,7 +272,7 @@ final class NaturalMobSpawner{
 
 	private static function despawnForPeaceful(World $world) : void{
 		foreach($world->getEntities() as $entity){
-			if($entity instanceof Zombie && !$entity->isFlaggedForDespawn()){
+			if(($entity instanceof Zombie || $entity instanceof Skeleton) && !$entity->isFlaggedForDespawn()){
 				$entity->flagForDespawn();
 			}
 		}
