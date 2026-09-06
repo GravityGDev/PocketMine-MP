@@ -33,7 +33,8 @@ use pocketmine\math\Facing;
 /**
  * @phpstan-type WallConnectionSet array<Facing::NORTH|Facing::EAST|Facing::SOUTH|Facing::WEST, WallConnectionType>
  */
-class Wall extends Transparent{
+class Wall extends Transparent implements Waterloggable{
+	use WaterloggableTrait;
 
 	/**
 	 * @var WallConnectionType[]
@@ -45,6 +46,10 @@ class Wall extends Transparent{
 	protected function describeBlockOnlyState(RuntimeDataDescriber $w) : void{
 		$w->wallConnections($this->connections);
 		$w->bool($this->post);
+	}
+
+	public function canBeWaterlogged() : bool{
+		return true;
 	}
 
 	/**
