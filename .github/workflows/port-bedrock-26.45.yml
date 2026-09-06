@@ -35,6 +35,28 @@ jobs:
             --exclude='.github' \
             /tmp/pmmp-26.45/ ./
 
+      - name: Promote Bedrock 1.26.45 to current target
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/network/mcpe/protocol/ProtocolInfo.php')
+          source = path.read_text()
+          source = source.replace(
+              'public const CURRENT_PROTOCOL = self::PROTOCOL_1_26_30;',
+              'public const CURRENT_PROTOCOL = self::PROTOCOL_1_26_45;'
+          )
+          source = source.replace(
+              "public const MINECRAFT_VERSION = 'v26.30';",
+              "public const MINECRAFT_VERSION = 'v26.45';"
+          )
+          source = source.replace(
+              "public const MINECRAFT_VERSION_NETWORK = '1.26.30';",
+              "public const MINECRAFT_VERSION_NETWORK = '1.26.45';"
+          )
+          path.write_text(source)
+          PY
+
       - name: Record port provenance
         run: |
           cat > BEDROCK_PORT.md <<'EOF'
@@ -47,6 +69,10 @@ jobs:
           SyntaxStudiosRE/NetherGamesMC continuation of PocketMine-MP and is pinned to
           SyntaxStudiosRE/PocketMine-MP commit
           `70d6ca99be6fc29f10af9e7ce4b2ca865e139108` for reproducibility.
+
+          Its 2169 implementation is a protocol-number/version bump over the 2168
+          serializer implementation. This branch additionally promotes 2169 to
+          CURRENT_PROTOCOL and advertises v26.45 / network version 1.26.45.
 
           PocketMine-MP remains LGPL-3.0 licensed. Original PMMP, NetherGamesMC and
           SyntaxStudiosRE attribution and copyright notices are preserved.
