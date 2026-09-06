@@ -29,9 +29,13 @@ abstract class Undead extends HostileMob{
 
 	private int $daylightBurnCheckTicks = 0;
 
+	protected function burnsInDaylight() : bool{
+		return true;
+	}
+
 	protected function entityBaseTick(int $tickDiff = 1) : bool{
 		$hasUpdate = parent::entityBaseTick($tickDiff);
-		if(!$this->isFlaggedForDespawn() && ($this->daylightBurnCheckTicks -= $tickDiff) <= 0){
+		if($this->burnsInDaylight() && !$this->isFlaggedForDespawn() && ($this->daylightBurnCheckTicks -= $tickDiff) <= 0){
 			$this->daylightBurnCheckTicks = self::DAYLIGHT_BURN_CHECK_INTERVAL;
 			$this->tryBurnInDaylight();
 		}
