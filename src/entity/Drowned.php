@@ -20,6 +20,7 @@ namespace pocketmine\entity;
 
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
+use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use function mt_rand;
 
@@ -41,7 +42,6 @@ class Drowned extends Zombie{
 	}
 
 	public function getPickedItem() : ?Item{
-		//TODO: wire the Drowned spawn egg after regenerating the vanilla item registry
-		return null;
+		return VanillaSpawnEggs::DROWNED();
 	}
 }
