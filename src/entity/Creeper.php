@@ -25,6 +25,7 @@ use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\event\entity\EntityPreExplodeEvent;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
+use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataCollection;
@@ -140,7 +141,7 @@ class Creeper extends HostileMob implements Explosive{
 	}
 
 	public function getPickedItem() : ?Item{
-		return VanillaItems::CREEPER_SPAWN_EGG();
+		return VanillaSpawnEggs::CREEPER();
 	}
 
 	protected function syncNetworkData(EntityMetadataCollection $properties) : void{
