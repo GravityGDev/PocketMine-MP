@@ -42,6 +42,10 @@ final class VanillaMobRegistry{
 			return new CaveSpider(EntityDataHelper::parseLocation($nbt, $world), $nbt);
 		}, ['CaveSpider', 'minecraft:cave_spider']);
 
+		$factory->register(Drowned::class, function(World $world, CompoundTag $nbt) : Drowned{
+			return new Drowned(EntityDataHelper::parseLocation($nbt, $world), $nbt);
+		}, ['Drowned', 'minecraft:drowned']);
+
 		$factory->register(Endermite::class, function(World $world, CompoundTag $nbt) : Endermite{
 			return new Endermite(EntityDataHelper::parseLocation($nbt, $world), $nbt);
 		}, ['Endermite', 'minecraft:endermite']);
@@ -65,5 +69,9 @@ final class VanillaMobRegistry{
 		$factory->register(WitherSkeleton::class, function(World $world, CompoundTag $nbt) : WitherSkeleton{
 			return new WitherSkeleton(EntityDataHelper::parseLocation($nbt, $world), $nbt);
 		}, ['WitherSkeleton', 'minecraft:wither_skeleton']);
+
+		$factory->register(ZombieVillager::class, function(World $world, CompoundTag $nbt) : ZombieVillager{
+			return new ZombieVillager(EntityDataHelper::parseLocation($nbt, $world), $nbt);
+		}, ['ZombieVillager', 'minecraft:zombie_villager']);
 	}
 }
