@@ -22,7 +22,7 @@ use pocketmine\entity\ai\goal\MeleeAttackGoal;
 use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\effect\VanillaEffects;
 use pocketmine\item\Item;
-use pocketmine\item\VanillaItems;
+use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\player\Player;
 use pocketmine\world\World;
@@ -62,6 +62,6 @@ class CaveSpider extends Spider{
 	}
 
 	public function getPickedItem() : ?Item{
-		return VanillaItems::CAVE_SPIDER_SPAWN_EGG();
+		return VanillaSpawnEggs::CAVE_SPIDER();
 	}
 }
