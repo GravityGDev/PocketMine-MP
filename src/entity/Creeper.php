@@ -32,19 +32,16 @@ use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataFlags;
 use pocketmine\network\mcpe\protocol\types\entity\EntityMetadataProperties;
 use pocketmine\world\Explosion;
 use pocketmine\world\Position;
-use pocketmine\world\World;
 use function max;
 use function min;
 use function mt_rand;
 
-class Creeper extends Mob implements Explosive{
-	private const TAG_NATURALLY_SPAWNED = "NaturallySpawned"; //TAG_Byte
+class Creeper extends HostileMob implements Explosive{
 	private const TAG_FUSE_TICKS = "FuseTicks"; //TAG_Short
 
 	private const FUSE_TICKS = 30;
 	private const EXPLOSION_RADIUS = 3.0;
 
-	private bool $naturallySpawned = false;
 	private int $fuseTicks = 0;
 	private int $previousFuseTicks = 0;
 	private int $swellDirection = -1;
@@ -57,24 +54,14 @@ class Creeper extends Mob implements Explosive{
 
 	protected function initEntity(CompoundTag $nbt) : void{
 		parent::initEntity($nbt);
-		$this->naturallySpawned = $nbt->getByte(self::TAG_NATURALLY_SPAWNED, 0) !== 0;
 		$this->fuseTicks = min(self::FUSE_TICKS - 1, max(0, $nbt->getShort(self::TAG_FUSE_TICKS, 0)));
 		$this->previousFuseTicks = $this->fuseTicks;
 	}
 
 	public function saveNBT() : CompoundTag{
 		$nbt = parent::saveNBT();
-		$nbt->setByte(self::TAG_NATURALLY_SPAWNED, $this->naturallySpawned ? 1 : 0);
 		$nbt->setShort(self::TAG_FUSE_TICKS, $this->fuseTicks);
 		return $nbt;
-	}
-
-	public function isNaturallySpawned() : bool{
-		return $this->naturallySpawned;
-	}
-
-	public function setNaturallySpawned(bool $naturallySpawned = true) : void{
-		$this->naturallySpawned = $naturallySpawned;
 	}
 
 	public function getFuseTicks() : int{
@@ -97,10 +84,6 @@ class Creeper extends Mob implements Explosive{
 	}
 
 	protected function entityBaseTick(int $tickDiff = 1) : bool{
-		if($this->getWorld()->getDifficulty() === World::DIFFICULTY_PEACEFUL){
-			$this->flagForDespawn();
-		}
-
 		$hasUpdate = parent::entityBaseTick($tickDiff);
 		if($this->isFlaggedForDespawn()){
 			return $hasUpdate;
