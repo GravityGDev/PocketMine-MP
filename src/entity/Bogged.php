@@ -24,6 +24,8 @@ use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\entity\ai\goal\RangedAttackGoal;
 use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\effect\VanillaEffects;
+use pocketmine\item\Item;
+use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 
@@ -51,5 +53,9 @@ class Bogged extends Skeleton{
 
 	public function getName() : string{
 		return "Bogged";
+	}
+
+	public function getPickedItem() : ?Item{
+		return VanillaSpawnEggs::BOGGED();
 	}
 }
