@@ -23,11 +23,14 @@ This branch is the development line for restoring more vanilla Minecraft Bedrock
 - [x] First-stage direct ground navigation with collision jumping
 - [x] Nearest-player target acquisition
 - [x] Zombie pursuit, looking, melee attack cooldown and idle wandering
-- [ ] Terrain-aware A* pathfinding
+- [x] Bounded terrain-aware A* ground pathfinding
+- [x] One-block step-up and safe short-drop path nodes
+- [x] Path caching, target-motion repathing and stuck detection
+- [x] Loaded-chunk-only path search to avoid AI-triggered terrain generation
 - [ ] Line-of-sight sensing and obstacle-aware targeting
 - [ ] Water/lava navigation and advanced movement controllers
 
-The current navigation layer intentionally uses direct ground steering. It is the testable movement foundation for the terrain-aware pathfinder; it is not being represented as complete vanilla pathfinding yet.
+The current A* layer is deliberately bounded and cardinal-first. It routes walking mobs around ordinary solid obstacles, supports one-block ascents and short drops, and recalculates when a target moves or a mob becomes stuck. Diagonal smoothing, doors, fluids and more advanced vanilla navigation rules will be layered on after sensing is in place.
 
 ### Stage 2 - Natural spawning
 
@@ -39,7 +42,7 @@ The current navigation layer intentionally uses direct ground steering. It is th
 
 ### Stage 3 - First vanilla mobs
 
-- [~] Zombie - basic AI is present; daylight burning, equipment, doors and advanced pathfinding remain
+- [~] Zombie - pursuit, A* navigation and melee AI are present; daylight burning, equipment, doors and additional vanilla rules remain
 - [ ] Skeleton
 - [ ] Creeper
 - [ ] Spider

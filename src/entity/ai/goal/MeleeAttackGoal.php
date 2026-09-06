@@ -54,14 +54,22 @@ final class MeleeAttackGoal extends Goal{
 		}
 
 		$this->mob->getLookControl()->lookAtEntity($target);
-		$this->mob->getNavigation()->moveTo($target->getPosition(), $this->speed);
 
 		$position = $this->mob->getPosition();
 		$targetPosition = $target->getPosition();
 		$dx = $targetPosition->x - $position->x;
 		$dy = $targetPosition->y - $position->y;
 		$dz = $targetPosition->z - $position->z;
-		if(($dx * $dx + $dy * $dy + $dz * $dz) <= $this->attackReach * $this->attackReach && $this->attackCooldown === 0){
+		$distanceSquared = $dx * $dx + $dy * $dy + $dz * $dz;
+		$attackReachSquared = $this->attackReach * $this->attackReach;
+
+		if($distanceSquared > $attackReachSquared){
+			$this->mob->getNavigation()->moveTo($targetPosition, $this->speed);
+			return;
+		}
+
+		$this->mob->getNavigation()->stop();
+		if($this->attackCooldown === 0){
 			$target->attack(new EntityDamageByEntityEvent(
 				$this->mob,
 				$target,
