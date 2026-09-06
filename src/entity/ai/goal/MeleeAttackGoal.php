@@ -63,7 +63,7 @@ final class MeleeAttackGoal extends Goal{
 		$distanceSquared = $dx * $dx + $dy * $dy + $dz * $dz;
 		$attackReachSquared = $this->attackReach * $this->attackReach;
 
-		if($distanceSquared > $attackReachSquared){
+		if($distanceSquared > $attackReachSquared || !$this->mob->canSee($target)){
 			$this->mob->getNavigation()->moveTo($targetPosition, $this->speed);
 			return;
 		}

@@ -23,6 +23,7 @@ use pocketmine\entity\ai\control\LookControl;
 use pocketmine\entity\ai\control\MoveControl;
 use pocketmine\entity\ai\goal\GoalSelector;
 use pocketmine\entity\ai\navigation\GroundNavigation;
+use pocketmine\math\VoxelRayTrace;
 use pocketmine\nbt\tag\CompoundTag;
 
 /**
@@ -99,6 +100,34 @@ abstract class Mob extends Living{
 
 	public function getNavigation() : GroundNavigation{
 		return $this->navigation;
+	}
+
+	public function canSee(Entity $target) : bool{
+		if($target->getWorld() !== $this->getWorld()){
+			return false;
+		}
+
+		$start = $this->getEyePos();
+		$end = $target->getEyePos();
+		if($start->distanceSquared($end) <= 1.0e-10){
+			return true;
+		}
+
+		$world = $this->getWorld();
+		foreach(VoxelRayTrace::betweenPoints($start, $end) as $blockPosition){
+			$x = (int) $blockPosition->x;
+			$y = (int) $blockPosition->y;
+			$z = (int) $blockPosition->z;
+			if(!$world->isChunkLoaded($x >> 4, $z >> 4)){
+				return false;
+			}
+
+			if($world->getBlockAt($x, $y, $z)->calculateIntercept($start, $end) !== null){
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	protected function entityBaseTick(int $tickDiff = 1) : bool{

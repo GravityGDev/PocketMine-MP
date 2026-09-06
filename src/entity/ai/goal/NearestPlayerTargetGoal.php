@@ -56,7 +56,7 @@ final class NearestPlayerTargetGoal extends Goal{
 		$nearestDistance = $this->range * $this->range;
 		$position = $this->mob->getPosition();
 		foreach($this->mob->getWorld()->getPlayers() as $player){
-			if(!$this->isValidTarget($player)){
+			if(!$this->isValidTarget($player) || !$this->mob->canSee($player)){
 				continue;
 			}
 
