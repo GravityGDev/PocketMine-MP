@@ -3,8 +3,6 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      args:
-        GIT_HASH: ${GIT_HASH:-619fa4d8d52eef5ce3bbd9b3712ba1fd87c7ec32}
     restart: unless-stopped
     ports:
       - "19132:19132/udp"
