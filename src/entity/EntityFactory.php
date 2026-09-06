@@ -211,6 +211,10 @@ final class EntityFactory{
 			return new Skeleton(Helper::parseLocation($nbt, $world), $nbt);
 		}, ['Skeleton', 'minecraft:skeleton']);
 
+		$this->register(Spider::class, function(World $world, CompoundTag $nbt) : Spider{
+			return new Spider(Helper::parseLocation($nbt, $world), $nbt);
+		}, ['Spider', 'minecraft:spider']);
+
 		$this->register(Zombie::class, function(World $world, CompoundTag $nbt) : Zombie{
 			return new Zombie(Helper::parseLocation($nbt, $world), $nbt);
 		}, ['Zombie', 'minecraft:zombie']);
