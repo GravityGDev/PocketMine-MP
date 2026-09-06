@@ -121,10 +121,34 @@ abstract class Liquid extends Transparent{
 	}
 
 	/**
+	 * Returns the vertical height occupied by this liquid inside its block cell, from 0.0 to 1.0.
+	 * Falling liquid and source blocks occupy the full height of the cell.
+	 */
+	public function getFluidSurfaceHeight() : float{
+		return 1.0 - (($this->falling ? 0 : $this->decay) / 9);
+	}
+
+	/**
 	 * @return float
 	 */
 	public function getFluidHeightPercent(){
 		return (($this->falling ? 0 : $this->decay) + 1) / 9;
+	}
+
+	/**
+	 * Returns whether the entity's bounding box actually intersects the occupied part of this fluid cell.
+	 * Liquid blocks have no collision box, so entity-inside callbacks otherwise treat a shallow fluid as a full cube.
+	 */
+	protected function isEntityInsideFluid(Entity $entity) : bool{
+		$bb = $entity->getBoundingBox();
+		$x = $this->position->getFloorX();
+		$y = $this->position->getFloorY();
+		$z = $this->position->getFloorZ();
+
+		return
+			$bb->maxX > $x && $bb->minX < $x + 1 &&
+			$bb->maxZ > $z && $bb->minZ < $z + 1 &&
+			$bb->maxY > $y && $bb->minY < $y + $this->getFluidSurfaceHeight();
 	}
 
 	public function isStill() : bool{
@@ -221,7 +245,7 @@ abstract class Liquid extends Transparent{
 	}
 
 	public function addVelocityToEntity(Entity $entity) : ?Vector3{
-		if($entity->canBeMovedByCurrents()){
+		if($entity->canBeMovedByCurrents() && $this->isEntityInsideFluid($entity)){
 			return $this->getFlowVector();
 		}
 		return null;
