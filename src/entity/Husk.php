@@ -25,7 +25,7 @@ use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\effect\VanillaEffects;
 use pocketmine\item\Item;
-use pocketmine\item\VanillaItems;
+use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\player\Player;
 
@@ -56,6 +56,6 @@ class Husk extends Zombie{
 	}
 
 	public function getPickedItem() : ?Item{
-		return VanillaItems::HUSK_SPAWN_EGG();
+		return VanillaSpawnEggs::HUSK();
 	}
 }
