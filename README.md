@@ -39,10 +39,13 @@ Released as the first GravityG-maintained version after the official PMMP 5.44.3
 - Fixed the Docker build after the move to `nethergamesmc/bedrock-data` by removing the obsolete `vendor/pocketmine/bedrock-data/.minify_json.php` build step.
 - Added a root `docker-compose.yml` for Dokploy/Docker Compose testing.
 - Verified the server boots successfully in Dokploy, creates the default world, reaches 100% spawn generation and opens the Bedrock network interface on UDP port 19132.
+- Docker PHAR builds now derive their git revision from the checked-out repository automatically instead of pinning stale build metadata.
 
 ### Validation status
 
-The server runtime and Docker deployment have been successfully boot-tested. A real Bedrock v26.45 client connection is the final protocol/gameplay validation step before considering the release fully production-verified.
+A real Minecraft Bedrock **v26.45** client has successfully connected to the server using **protocol 2169**, entered the world and executed the server information command. The server reported **GravityG-PocketMine-MP 5.45.0**, compatible Minecraft version **1.26.45**, protocol **2169**, PHP **8.2.30** and Linux at runtime.
+
+Core protocol/login compatibility for Bedrock 1.26.45 is therefore verified. Broader plugin, gameplay and long-running production testing can continue as normal for a maintained PocketMine server release.
 
 ## Downloads
 
