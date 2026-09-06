@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\data\bedrock\item;
 
 use pocketmine\item\SpawnEgg;
+use pocketmine\item\StringToItemParser;
 use pocketmine\item\VanillaSpawnEggs;
 
 final class ParitySpawnEggItemMappings{
@@ -52,9 +53,13 @@ final class ParitySpawnEggItemMappings{
 	}
 
 	public static function register(?ItemDeserializer $deserializer, ?ItemSerializer $serializer) : void{
+		$parser = StringToItemParser::getInstance();
 		foreach(self::getMappings() as $bedrockId => $item){
 			$deserializer?->map($bedrockId, fn() => clone $item);
 			$serializer?->map($item, fn() => new SavedItemData($bedrockId));
+			if($parser->parse($bedrockId) === null){
+				$parser->register($bedrockId, fn() => clone $item);
+			}
 		}
 	}
 }
