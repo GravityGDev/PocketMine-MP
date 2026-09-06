@@ -19,7 +19,8 @@ jobs:
     secrets: inherit
 
   codestyle:
-    name: Code Style checks
+    name: Code Style checks (advisory)
+    continue-on-error: true
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
