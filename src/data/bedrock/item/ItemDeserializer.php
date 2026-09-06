@@ -45,6 +45,7 @@ final class ItemDeserializer{
 		private BlockStateDeserializer $blockStateDeserializer
 	){
 		new ItemSerializerDeserializerRegistrar($this, null);
+		ParitySpawnEggItemMappings::register($this, null);
 	}
 
 	/**
