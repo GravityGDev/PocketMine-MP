@@ -35,8 +35,9 @@ use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 use pocketmine\world\sound\DoorSound;
 
-class Trapdoor extends Transparent implements HorizontalFacing{
+class Trapdoor extends Transparent implements HorizontalFacing, Waterloggable{
 	use HorizontalFacingTrait;
+	use WaterloggableTrait;
 
 	protected bool $open = false;
 	protected bool $top = false;
@@ -45,6 +46,10 @@ class Trapdoor extends Transparent implements HorizontalFacing{
 		$w->horizontalFacing($this->facing);
 		$w->bool($this->top);
 		$w->bool($this->open);
+	}
+
+	public function canBeWaterlogged() : bool{
+		return true;
 	}
 
 	public function isOpen() : bool{ return $this->open; }
