@@ -111,6 +111,22 @@ class Chunk{
 	}
 
 	/**
+	 * Returns the internal blockstate ID at the given storage layer. Layer 0 is the normal block layer; higher layers
+	 * are used by Bedrock for overlapping states such as waterlogging.
+	 */
+	public function getBlockStateIdAtLayer(int $x, int $y, int $z, int $layer) : int{
+		return $this->getSubChunk($y >> SubChunk::COORD_BIT_SIZE)->getBlockStateIdAtLayer($x, $y & SubChunk::COORD_MASK, $z, $layer);
+	}
+
+	/**
+	 * Sets the internal blockstate ID at the given storage layer.
+	 */
+	public function setBlockStateIdAtLayer(int $x, int $y, int $z, int $layer, int $block) : void{
+		$this->getSubChunk($y >> SubChunk::COORD_BIT_SIZE)->setBlockStateIdAtLayer($x, $y & SubChunk::COORD_MASK, $z, $layer, $block);
+		$this->terrainDirtyFlags |= self::DIRTY_FLAG_BLOCKS;
+	}
+
+	/**
 	 * Returns the Y coordinate of the highest non-air block at the specified X/Z chunk block coordinates
 	 *
 	 * @param int $x 0-15
