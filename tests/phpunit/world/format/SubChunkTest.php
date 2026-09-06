@@ -48,4 +48,17 @@ class SubChunkTest extends TestCase{
 		self::assertNotSame($sub1->getBlockLightArray()->get(0, 0, 0), $sub2->getBlockLightArray()->get(0, 0, 0));
 		self::assertNotSame($sub1->getBlockSkyLightArray()->get(0, 0, 0), $sub2->getBlockSkyLightArray()->get(0, 0, 0));
 	}
+
+	public function testSecondaryBlockLayerStorage() : void{
+		$subChunk = new SubChunk(0, [], new PalettedBlockArray(BiomeIds::OCEAN));
+
+		self::assertSame(0, $subChunk->getBlockStateIdAtLayer(1, 2, 3, 1));
+		$subChunk->setBlockStateId(1, 2, 3, 10);
+		$subChunk->setBlockStateIdAtLayer(1, 2, 3, 1, 20);
+
+		self::assertSame(10, $subChunk->getBlockStateId(1, 2, 3));
+		self::assertSame(10, $subChunk->getBlockStateIdAtLayer(1, 2, 3, 0));
+		self::assertSame(20, $subChunk->getBlockStateIdAtLayer(1, 2, 3, 1));
+		self::assertCount(2, $subChunk->getBlockLayers());
+	}
 }
