@@ -349,6 +349,7 @@ class WorldManager{
 
 			$worldTime = microtime(true);
 			$world->doTick($currentTick);
+			\pocketmine\world\spawner\NaturalMobSpawner::tick($world, $currentTick);
 			$tickMs = (microtime(true) - $worldTime) * 1000;
 			$world->tickRateTime = $tickMs;
 			if($tickMs >= Server::TARGET_SECONDS_PER_TICK * 1000){
