@@ -27,6 +27,7 @@ use pocketmine\block\Liquid;
 use pocketmine\block\utils\SupportType;
 use pocketmine\entity\Creeper;
 use pocketmine\entity\Entity;
+use pocketmine\entity\HostileMob;
 use pocketmine\entity\Location;
 use pocketmine\entity\Skeleton;
 use pocketmine\entity\Zombie;
@@ -264,7 +265,7 @@ final class NaturalMobSpawner{
 	}
 
 	private static function isNaturalHostile(Entity $entity) : bool{
-		return ($entity instanceof Zombie || $entity instanceof Skeleton || $entity instanceof Creeper) && $entity->isNaturallySpawned();
+		return $entity instanceof HostileMob && $entity->isNaturallySpawned();
 	}
 
 	/**
@@ -297,7 +298,7 @@ final class NaturalMobSpawner{
 
 	private static function despawnForPeaceful(World $world) : void{
 		foreach($world->getEntities() as $entity){
-			if(($entity instanceof Zombie || $entity instanceof Skeleton || $entity instanceof Creeper) && !$entity->isFlaggedForDespawn()){
+			if($entity instanceof HostileMob && !$entity->isFlaggedForDespawn()){
 				$entity->flagForDespawn();
 			}
 		}
