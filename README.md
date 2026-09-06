@@ -12,6 +12,17 @@ A community-maintained continuation of the archived **PocketMine-MP** server sof
 
 This fork keeps the multi-protocol work inherited from NetherGamesMC and SyntaxStudiosRE, including the protocol changes required by Bedrock 1.26.40+ and the 1.26.45 protocol 2169 target.
 
+## Downloads
+
+Stable releases are built automatically by GitHub Actions. Each release includes:
+
+- `PocketMine-MP.phar` - ready-to-run server PHAR
+- `PocketMine-MP.phar.sha256` - SHA-256 checksum
+- `release-build-info.json` - exact PocketMine, Bedrock protocol and commit metadata
+- `start.sh`, `start.cmd` and `start.ps1` - launcher scripts
+
+Download the latest build from the [GitHub Releases page](https://github.com/GravityGDev/PocketMine-MP/releases/latest).
+
 ## Important
 
 PocketMine-MP is **not** a vanilla Bedrock Dedicated Server replacement. It is designed for custom servers and plugin-driven networks. Vanilla features such as full vanilla world generation, redstone and mob AI are not complete in PocketMine-MP.
@@ -24,6 +35,10 @@ PocketMine-MP is **not** a vanilla Bedrock Dedicated Server replacement. It is d
 composer install --no-dev --classmap-authoritative --ignore-platform-reqs
 php -dphar.readonly=0 build/server-phar.php
 ```
+
+## Automated releases
+
+The `.github/workflows/release-phar.yml` workflow builds and verifies the PHAR whenever `src/VersionInfo.php` is changed on `stable`. It creates or updates the matching `v<version>` GitHub release automatically. Publishing a GitHub release manually also causes the workflow to rebuild and attach the release assets.
 
 ## Protocol-port lineage
 
