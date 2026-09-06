@@ -42,8 +42,16 @@ final class VanillaMobRegistry{
 			return new Endermite(EntityDataHelper::parseLocation($nbt, $world), $nbt);
 		}, ['Endermite', 'minecraft:endermite']);
 
+		$factory->register(Husk::class, function(World $world, CompoundTag $nbt) : Husk{
+			return new Husk(EntityDataHelper::parseLocation($nbt, $world), $nbt);
+		}, ['Husk', 'minecraft:husk']);
+
 		$factory->register(Silverfish::class, function(World $world, CompoundTag $nbt) : Silverfish{
 			return new Silverfish(EntityDataHelper::parseLocation($nbt, $world), $nbt);
 		}, ['Silverfish', 'minecraft:silverfish']);
+
+		$factory->register(WitherSkeleton::class, function(World $world, CompoundTag $nbt) : WitherSkeleton{
+			return new WitherSkeleton(EntityDataHelper::parseLocation($nbt, $world), $nbt);
+		}, ['WitherSkeleton', 'minecraft:wither_skeleton']);
 	}
 }
