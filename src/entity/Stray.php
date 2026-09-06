@@ -24,6 +24,8 @@ use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\entity\ai\goal\RangedAttackGoal;
 use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\effect\VanillaEffects;
+use pocketmine\item\Item;
+use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 
 class Stray extends Skeleton{
@@ -45,5 +47,9 @@ class Stray extends Skeleton{
 
 	public function getName() : string{
 		return "Stray";
+	}
+
+	public function getPickedItem() : ?Item{
+		return VanillaSpawnEggs::STRAY();
 	}
 }
