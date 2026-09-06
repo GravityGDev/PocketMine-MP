@@ -52,6 +52,10 @@ class Water extends Liquid{
 	}
 
 	public function onEntityInside(Entity $entity) : bool{
+		if(!$this->isEntityInsideFluid($entity)){
+			return true;
+		}
+
 		$entity->resetFallDistance();
 		if($entity->isOnFire()){
 			$entity->extinguish(EntityExtinguishEvent::CAUSE_WATER);
