@@ -26,11 +26,13 @@ use pocketmine\player\Player;
 final class MeleeAttackGoal extends Goal{
 	private int $attackCooldown = 0;
 
+	/** @phpstan-param (\Closure(Mob, Player) : void)|null $onSuccessfulAttack */
 	public function __construct(
 		private Mob $mob,
 		private float $speed = 0.1,
 		private float $damage = 3.0,
-		private float $attackReach = 1.8
+		private float $attackReach = 1.8,
+		private ?\Closure $onSuccessfulAttack = null
 	){
 		$this->setFlags(self::FLAG_MOVE, self::FLAG_LOOK);
 	}
@@ -70,12 +72,16 @@ final class MeleeAttackGoal extends Goal{
 
 		$this->mob->getNavigation()->stop();
 		if($this->attackCooldown === 0){
-			$target->attack(new EntityDamageByEntityEvent(
+			$event = new EntityDamageByEntityEvent(
 				$this->mob,
 				$target,
 				EntityDamageEvent::CAUSE_ENTITY_ATTACK,
 				$this->damage
-			));
+			);
+			$target->attack($event);
+			if(!$event->isCancelled() && $this->onSuccessfulAttack !== null){
+				($this->onSuccessfulAttack)($this->mob, $target);
+			}
 			$this->attackCooldown = 20;
 		}
 	}
