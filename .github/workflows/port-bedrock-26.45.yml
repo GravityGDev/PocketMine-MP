@@ -6,6 +6,7 @@ on:
       - bedrock-26.45-port
     paths:
       - .github/workflows/port-bedrock-26.45.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,48 +21,54 @@ jobs:
           ref: bedrock-26.45-port
           fetch-depth: 0
 
-      - name: Fetch tested 1.26.45 implementation
+      - name: Fetch tested Bedrock 1.26.45 implementation
         run: |
           git clone https://github.com/SyntaxStudiosRE/PocketMine-MP.git /tmp/pmmp-26.45
           cd /tmp/pmmp-26.45
           git checkout 70d6ca99be6fc29f10af9e7ce4b2ca865e139108
+          test "$(git rev-parse HEAD)" = "70d6ca99be6fc29f10af9e7ce4b2ca865e139108"
 
       - name: Port runtime source
         run: |
           rsync -a --delete \
             --exclude='.git' \
             --exclude='.github' \
-            --exclude='README.md' \
-            --exclude='CHANGELOG.md' \
             /tmp/pmmp-26.45/ ./
 
-      - name: Restore GravityGDev identity
+      - name: Record port provenance
         run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
+          cat > BEDROCK_PORT.md <<'EOF'
+          # Bedrock 1.26.45 port
 
-          composer_path = Path('composer.json')
-          composer = json.loads(composer_path.read_text())
-          composer['name'] = 'gravitygdev/pocketmine-mp'
-          composer['description'] = 'Community-maintained PocketMine-MP fork with Minecraft Bedrock 1.26.45 support'
-          composer['homepage'] = 'https://github.com/GravityGDev/PocketMine-MP'
-          composer_path.write_text(json.dumps(composer, indent=3, ensure_ascii=False) + '\n')
+          This branch updates the archived PMMP codebase to Minecraft Bedrock 1.26.45
+          (display version v26.45), protocol 2169.
 
-          version_path = Path('src/VersionInfo.php')
-          version = version_path.read_text()
-          version = version.replace('public const NAME = "SyntaxStudios-PocketMine-MP";', 'public const NAME = "PocketMine-MP";')
-          version = version.replace('public const GITHUB_URL = "https://github.com/SyntaxStudiosRE/PocketMine-MP";', 'public const GITHUB_URL = "https://github.com/GravityGDev/PocketMine-MP";')
-          version_path.write_text(version)
+          The protocol/runtime implementation is based on the public
+          SyntaxStudiosRE/NetherGamesMC continuation of PocketMine-MP and is pinned to
+          SyntaxStudiosRE/PocketMine-MP commit
+          `70d6ca99be6fc29f10af9e7ce4b2ca865e139108` for reproducibility.
 
-          Path('BEDROCK_PORT.md').write_text('''# Bedrock 1.26.45 port\n\nThis branch updates the archived PMMP codebase to Minecraft Bedrock 1.26.45 (display version v26.45), protocol 2169.\n\nThe protocol implementation is based on the public SyntaxStudiosRE/NetherGamesMC continuation of PocketMine-MP and is pinned to SyntaxStudiosRE/PocketMine-MP commit `70d6ca99be6fc29f10af9e7ce4b2ca865e139108` for reproducibility.\n\nPocketMine-MP remains LGPL-3.0 licensed. Original PMMP, NetherGamesMC and SyntaxStudiosRE attribution and copyright notices in source files are preserved.\n''')
-          PY
+          PocketMine-MP remains LGPL-3.0 licensed. Original PMMP, NetherGamesMC and
+          SyntaxStudiosRE attribution and copyright notices are preserved.
+          EOF
 
-      - name: Verify target protocol is present
+      - name: Verify Bedrock target
         run: |
           grep -q 'PROTOCOL_1_26_45 = 2169' src/network/mcpe/protocol/ProtocolInfo.php
+          grep -q 'CURRENT_PROTOCOL = self::PROTOCOL_1_26_45' src/network/mcpe/protocol/ProtocolInfo.php
           grep -q "MINECRAFT_VERSION = 'v26.45'" src/network/mcpe/protocol/ProtocolInfo.php
           grep -q "MINECRAFT_VERSION_NETWORK = '1.26.45'" src/network/mcpe/protocol/ProtocolInfo.php
+          grep -q 'ProtocolInfo::PROTOCOL_1_26_45' src/network/mcpe/convert/ItemTranslator.php
+          grep -q 'ProtocolInfo::PROTOCOL_1_26_45' src/network/mcpe/convert/BlockTranslator.php
+          grep -q 'ProtocolInfo::PROTOCOL_1_26_45' src/network/mcpe/convert/ItemTypeDictionaryFromDataHelper.php
+
+      - name: PHP syntax checks
+        run: |
+          php -l src/network/mcpe/protocol/ProtocolInfo.php
+          php -l src/network/mcpe/convert/ItemTranslator.php
+          php -l src/network/mcpe/convert/BlockTranslator.php
+          php -l src/network/mcpe/convert/ItemTypeDictionaryFromDataHelper.php
+          php -l src/VersionInfo.php
 
       - name: Commit port
         run: |
