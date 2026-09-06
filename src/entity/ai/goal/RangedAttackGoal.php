@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace pocketmine\entity\ai\goal;
 
+use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\Location;
 use pocketmine\entity\Mob;
 use pocketmine\entity\projectile\Arrow;
@@ -33,7 +34,10 @@ final class RangedAttackGoal extends Goal{
 	public function __construct(
 		private Mob $mob,
 		private float $speed = 0.1,
-		private float $attackRadius = 15.0
+		private float $attackRadius = 15.0,
+		private int $normalAttackCooldown = 60,
+		private int $hardAttackCooldown = 40,
+		private ?EffectInstance $arrowHitEffect = null
 	){
 		$this->setFlags(self::FLAG_MOVE, self::FLAG_LOOK);
 	}
@@ -73,7 +77,9 @@ final class RangedAttackGoal extends Goal{
 		$this->mob->getNavigation()->stop();
 		if($this->attackCooldown === 0){
 			$this->shoot($target);
-			$this->attackCooldown = $this->mob->getWorld()->getDifficulty() === World::DIFFICULTY_HARD ? 40 : 60;
+			$this->attackCooldown = $this->mob->getWorld()->getDifficulty() === World::DIFFICULTY_HARD ?
+				$this->hardAttackCooldown :
+				$this->normalAttackCooldown;
 		}
 	}
 
@@ -100,6 +106,9 @@ final class RangedAttackGoal extends Goal{
 			false
 		);
 		$arrow->setPickupMode(Arrow::PICKUP_NONE);
+		if($this->arrowHitEffect !== null){
+			$arrow->setHitEffect($this->arrowHitEffect);
+		}
 		$arrow->setMotion(new Vector3($dx / $length * 1.6, $dy / $length * 1.6, $dz / $length * 1.6));
 		$arrow->spawnToAll();
 		$this->mob->getWorld()->addSound($source, new BowShootSound());
