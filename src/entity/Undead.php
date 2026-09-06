@@ -22,7 +22,7 @@ use pocketmine\world\World;
 use function count;
 use function floor;
 
-abstract class Undead extends Mob{
+abstract class Undead extends HostileMob{
 	private const DAYLIGHT_BURN_CHECK_INTERVAL = 10;
 	private const DAYLIGHT_BURN_MIN_SKY_LIGHT = 12;
 	private const DAYLIGHT_BURN_SECONDS = 8;
@@ -30,14 +30,13 @@ abstract class Undead extends Mob{
 	private int $daylightBurnCheckTicks = 0;
 
 	protected function entityBaseTick(int $tickDiff = 1) : bool{
-		if($this->getWorld()->getDifficulty() === World::DIFFICULTY_PEACEFUL){
-			$this->flagForDespawn();
-		}elseif(($this->daylightBurnCheckTicks -= $tickDiff) <= 0){
+		$hasUpdate = parent::entityBaseTick($tickDiff);
+		if(!$this->isFlaggedForDespawn() && ($this->daylightBurnCheckTicks -= $tickDiff) <= 0){
 			$this->daylightBurnCheckTicks = self::DAYLIGHT_BURN_CHECK_INTERVAL;
 			$this->tryBurnInDaylight();
 		}
 
-		return parent::entityBaseTick($tickDiff);
+		return $hasUpdate;
 	}
 
 	private function tryBurnInDaylight() : void{
