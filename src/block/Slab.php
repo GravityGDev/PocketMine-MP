@@ -33,7 +33,7 @@ use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 
-class Slab extends Transparent{
+class Slab extends Transparent implements Waterloggable{
 	protected SlabType $slabType = SlabType::BOTTOM;
 
 	public function __construct(BlockIdentifier $idInfo, string $name, BlockTypeInfo $typeInfo){
@@ -45,6 +45,10 @@ class Slab extends Transparent{
 	}
 
 	public function isTransparent() : bool{
+		return $this->slabType !== SlabType::DOUBLE;
+	}
+
+	public function canBeWaterlogged() : bool{
 		return $this->slabType !== SlabType::DOUBLE;
 	}
 
