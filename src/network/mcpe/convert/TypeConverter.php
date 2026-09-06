@@ -23,6 +23,10 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\convert;
 
+use DaveRandom\CallbackValidator\BuiltInTypes;
+use DaveRandom\CallbackValidator\CallbackType;
+use DaveRandom\CallbackValidator\ParameterType;
+use DaveRandom\CallbackValidator\ReturnType;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
 use pocketmine\block\tile\Container;
@@ -31,40 +35,50 @@ use pocketmine\crafting\ExactRecipeIngredient;
 use pocketmine\crafting\MetaWildcardRecipeIngredient;
 use pocketmine\crafting\RecipeIngredient;
 use pocketmine\crafting\TagWildcardRecipeIngredient;
-use pocketmine\data\bedrock\BedrockDataFiles;
 use pocketmine\data\bedrock\item\BlockItemIdMap;
+use pocketmine\data\bedrock\item\downgrade\ItemIdMetaDowngrader;
 use pocketmine\data\bedrock\item\ItemTypeNames;
 use pocketmine\data\SavedDataLoadingException;
+use pocketmine\entity\Skin;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
 use pocketmine\nbt\LittleEndianNbtSerializer;
-use pocketmine\nbt\NBT;
 use pocketmine\nbt\NbtException;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\ListTag;
 use pocketmine\nbt\tag\Tag;
 use pocketmine\nbt\TreeRoot;
 use pocketmine\nbt\UnexpectedTagTypeException;
+use pocketmine\network\mcpe\NetworkBroadcastUtils;
+use pocketmine\network\mcpe\protocol\ClientboundPacket;
+use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\ItemTypeDictionary;
 use pocketmine\network\mcpe\protocol\types\GameMode as ProtocolGameMode;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStackExtraData;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStackExtraDataShield;
+use pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper;
 use pocketmine\network\mcpe\protocol\types\recipe\IntIdMetaItemDescriptor;
 use pocketmine\network\mcpe\protocol\types\recipe\RecipeIngredient as ProtocolRecipeIngredient;
 use pocketmine\network\mcpe\protocol\types\recipe\StringIdMetaItemDescriptor;
 use pocketmine\network\mcpe\protocol\types\recipe\TagItemDescriptor;
+use pocketmine\network\mcpe\protocol\types\skin\SkinData;
+use pocketmine\network\mcpe\protocol\types\skin\SkinImage;
 use pocketmine\player\GameMode;
+use pocketmine\player\Player;
 use pocketmine\utils\AssumptionFailedError;
-use pocketmine\utils\Filesystem;
-use pocketmine\utils\SingletonTrait;
-use pocketmine\world\format\io\GlobalBlockStateHandlers;
+use pocketmine\utils\ProtocolSingletonTrait;
+use pocketmine\utils\Utils;
 use pocketmine\world\format\io\GlobalItemDataHandlers;
+use function count;
 use function get_class;
 use function hash;
+use function spl_object_id;
 
 class TypeConverter{
-	use SingletonTrait;
+	use ProtocolSingletonTrait {
+		ProtocolSingletonTrait::__construct as private __protocolConstruct;
+	}
 
 	private const PM_ID_TAG = "___Id___";
 	private const PM_FULL_NBT_HASH_TAG = "___FullNbtHash___";
@@ -75,22 +89,21 @@ class TypeConverter{
 	private BlockTranslator $blockTranslator;
 	private ItemTranslator $itemTranslator;
 	private ItemTypeDictionary $itemTypeDictionary;
+	private ItemIdMetaDowngrader $itemDataDowngrader;
 	private int $shieldRuntimeId;
 
 	private SkinAdapter $skinAdapter;
 
-	public function __construct(){
+	public function __construct(int $protocolId){
+		$this->__protocolConstruct($protocolId);
+
 		//TODO: inject stuff via constructor
 		$this->blockItemIdMap = BlockItemIdMap::getInstance();
 
-		$canonicalBlockStatesRaw = Filesystem::fileGetContents(BedrockDataFiles::CANONICAL_BLOCK_STATES_NBT);
-		$metaMappingRaw = Filesystem::fileGetContents(BedrockDataFiles::BLOCK_STATE_META_MAP_JSON);
-		$this->blockTranslator = new BlockTranslator(
-			BlockStateDictionary::loadFromString($canonicalBlockStatesRaw, $metaMappingRaw),
-			GlobalBlockStateHandlers::getSerializer()
-		);
+		$this->blockTranslator = BlockTranslator::loadFromProtocolId($protocolId);
 
-		$this->itemTypeDictionary = ItemTypeDictionaryFromDataHelper::loadFromString(Filesystem::fileGetContents(BedrockDataFiles::REQUIRED_ITEM_LIST_JSON));
+		$this->itemTypeDictionary = ItemTypeDictionaryFromDataHelper::loadFromProtocolId($protocolId);
+		$this->itemDataDowngrader = new ItemIdMetaDowngrader($this->itemTypeDictionary, ItemTranslator::getItemSchemaId($protocolId));
 		$this->shieldRuntimeId = $this->itemTypeDictionary->fromStringId(ItemTypeNames::SHIELD);
 
 		$this->itemTranslator = new ItemTranslator(
@@ -98,7 +111,8 @@ class TypeConverter{
 			$this->blockTranslator->getBlockStateDictionary(),
 			GlobalItemDataHandlers::getSerializer(),
 			GlobalItemDataHandlers::getDeserializer(),
-			$this->blockItemIdMap
+			$this->blockItemIdMap,
+			$this->itemDataDowngrader
 		);
 
 		$this->skinAdapter = new LegacySkinAdapter();
@@ -114,6 +128,70 @@ class TypeConverter{
 
 	public function setSkinAdapter(SkinAdapter $skinAdapter) : void{
 		$this->skinAdapter = $skinAdapter;
+	}
+
+	/**
+	 * Converts a real Skin to wire SkinData, falling back to a known-safe blank skin on any failure.
+	 *
+	 * Found 2026-08-09 in live production: showing a real Player using Bedrock's default (no
+	 * custom skin set, i.e. Steve/Alex) skin to another protocol >= 1.26.40 client disconnects
+	 * that client almost immediately - reproduced repeatedly with a real player and a real
+	 * community server full of other real players, confirmed to stop happening once that
+	 * player set any custom skin. The exact wire-level cause was never isolated (no server-side
+	 * exception is thrown anywhere in the conversion - decode/encode both "succeed" from PHP's
+	 * perspective), so this can't be fixed at the root yet. This defensively substitutes a
+	 * plain, already-proven-safe placeholder skin (same blank skin AimTrapEntity/WayPoint use)
+	 * for that protocol range whenever conversion throws OR whenever the skin looks like an
+	 * unmodified default (bare UUID skinId with no ".customname" suffix, which is what a
+	 * default-skin real player's skinId looks like server-side) - trading a wrong-looking
+	 * character model for that specific viewer/entity for not disconnecting everyone nearby.
+	 */
+	public function safeToSkinData(Skin $skin) : SkinData{
+		return $this->skinAdapter->toSkinData($skin);
+	}
+
+	/**
+	 * True if this skin is Bedrock's Persona system or the classic default skin pack
+	 * (Steve/Alex/Ari/Noor/Efe/Kai/Zuri/Sunny/Makena), shown to a protocol 2168+ viewer. No
+	 * synthetic replacement SkinData we've tried (several: blank/opaque image, matching
+	 * geometry name to arm size, the same blank skin AimTrapEntity/WayPoint use, a real
+	 * player-shaped "uuid.name" skinId paired with solid-gray non-zero pixel data - confirmed
+	 * live 2026-08-14, still crashes) has avoided disconnecting the viewer - every variant
+	 * crashes exactly like the real thing would, including full replays of the real decoded
+	 * SkinData (id, pixels, persona flag/pieces all genuine - see commit 556d475d5). Safest
+	 * known fix is to omit this player from the PlayerListPacket for this viewer entirely
+	 * rather than send ANY skin for them.
+	 *
+	 * 2026-09-01: this used to guess "is this a default skin" from the shape of the skinId
+	 * string (no "." = default). That heuristic was wrong: a production packet capture
+	 * (2026-08-10, /tmp/prod_skin_debug.txt) showed over half of real, non-Persona, non-default
+	 * custom skins also have a dot-less skinId - the dot has nothing to do with whether a skin
+	 * is custom, so those players were being incorrectly hidden from every 2168+ viewer's
+	 * tablist and native "@" mention autocomplete. Now reads Skin::isPersonaOrDefault(), an
+	 * explicit flag set where the skin is actually decoded (LegacySkinAdapter::fromSkinData(),
+	 * LoginPacketHandler's login-time substitution) instead of re-guessing from the ID shape.
+	 */
+	public function isUnsafeSkinForPlayerList(Skin $skin) : bool{
+		//2026-08-22: briefly disabled to test whether the buildPlatform fix (2026-08-15)
+		//incidentally also resolved the third-party-viewer crash this exists to work around -
+		//it did not. Live result: a lone default-skin 2168 player, with nobody else even
+		//online, self-disconnected ~4.6s after spawn the instant this stopped hiding them -
+		//same timing as the original login crash. This function applies to EVERY entry being
+		//built for a viewer's PlayerListPacket, including a session's own self-entry (a
+		//player is also a "viewer" of themselves) - with this enabled, a default-skin player
+		//never got their own self-entry either, which incidentally meant they were never
+		//exposed to whatever about that self-entry actually crashes the client. Keep enabled;
+		//it's load-bearing for the LoginPacketHandler skin-substitution fix too, not just for
+		//protecting third parties.
+		//
+		//IMPORTANT: this is 2168-ONLY, same as the login-time rejection in
+		//LoginPacketHandler - see the long comment there. This was briefly extended down to
+		//PROTOCOL_1_26_20 (975/1001) on 2026-08-10 after what looked like the same crash
+		//reproducing there, but that was a false positive caused by an unrelated encoding
+		//bug (now fixed - see BedrockProtocol commits be47df5/5f914f1). Confirmed live
+		//2026-08-13 with the encoding bug fixed: a default/Persona skin causes zero issue on
+		//975/1001 with this check fully disabled, so it must stay 2168-only.
+		return $this->protocolId >= ProtocolInfo::PROTOCOL_1_26_40 && $skin->isPersonaOrDefault();
 	}
 
 	/**
@@ -147,8 +225,11 @@ class TypeConverter{
 			return new ProtocolRecipeIngredient(null, 0);
 		}
 		if($ingredient instanceof MetaWildcardRecipeIngredient){
-			$id = $this->itemTypeDictionary->fromStringId($ingredient->getItemId());
-			$meta = self::RECIPE_INPUT_WILDCARD_META;
+			$oldStringId = $ingredient->getItemId();
+			[$stringId, $meta] = $this->itemDataDowngrader->downgrade($oldStringId, 0);
+
+			$id = $this->itemTypeDictionary->fromStringId($stringId);
+			$meta = $meta === 0 && $stringId === $oldStringId ? self::RECIPE_INPUT_WILDCARD_META : $meta; // downgrader returns the same meta
 			$descriptor = new IntIdMetaItemDescriptor($id, $meta);
 		}elseif($ingredient instanceof ExactRecipeIngredient){
 			$item = $ingredient->getItem();
@@ -313,6 +394,7 @@ class TypeConverter{
 		$extraData = $id === $this->shieldRuntimeId ?
 			new ItemStackExtraDataShield($nbt, canPlaceOn: [], canDestroy: [], blockingTick: 0) :
 			new ItemStackExtraData($nbt, canPlaceOn: [], canDestroy: []);
+
 		$extraDataSerializer = new ByteBufferWriter();
 		$extraData->write($extraDataSerializer);
 
@@ -323,6 +405,41 @@ class TypeConverter{
 			$blockRuntimeId ?? ItemTranslator::NO_BLOCK_RUNTIME_ID,
 			$extraDataSerializer->getData(),
 		);
+	}
+
+	/**
+	 * AddPlayerPacket's "Carried Item" field, protocol 2168+ only. Per the official Mojang
+	 * changelog for r/26_u4 (1.26.40): "The carried item is now captured via
+	 * ItemStack::getStrippedNetworkItem() (item/count/aux/networkUserData/chargedItem); the
+	 * item-stack net id variant is no longer included and network user data is stripped (the
+	 * empty 'ench' key is preserved so enchantment glint still renders)." coreItemStackToNet()
+	 * + ItemStackWrapper::legacy() (used everywhere else, including the old AddPlayerPacket
+	 * call site) sets stackId=1 (hasNetId=true) for ANY non-air item and keeps the item's full
+	 * real NBT (name/lore/real enchant levels/custom data) - exactly what this field must NOT
+	 * have. This produces a wire-correct substitute: same id/meta/count/blockRuntimeId, stackId
+	 * forced to 0 so no Net Id Variant gets written, and NBT reduced to just an empty "ench"
+	 * ListTag when the item actually has enchantments (nothing else - no name, no lore, no real
+	 * enchant data) or omitted entirely otherwise.
+	 */
+	public function strippedCarriedItemForAddPlayer(Item $itemStack) : ItemStackWrapper{
+		$networkItem = $this->coreItemStackToNet($itemStack);
+		if($networkItem->getId() === 0){
+			return new ItemStackWrapper(0, $networkItem);
+		}
+
+		$strippedNbt = $itemStack->hasEnchantments() ? CompoundTag::create()->setTag(Item::TAG_ENCH, new ListTag([])) : null;
+
+		$extraData = new ItemStackExtraData($strippedNbt, canPlaceOn: [], canDestroy: []);
+		$extraDataSerializer = new ByteBufferWriter();
+		$extraData->write($extraDataSerializer);
+
+		return new ItemStackWrapper(0, new ItemStack(
+			$networkItem->getId(),
+			$networkItem->getMeta(),
+			$networkItem->getCount(),
+			$networkItem->getBlockRuntimeId(),
+			$extraDataSerializer->getData(),
+		));
 	}
 
 	/**
@@ -357,6 +474,48 @@ class TypeConverter{
 		}
 
 		return $itemResult;
+	}
+
+	/**
+	 * @param Player[] $players
+	 *
+	 * @phpstan-return array{array<int, TypeConverter>, array<int, array<int, Player>>}
+	 */
+	public static function sortByConverter(array $players) : array{
+		/** @var TypeConverter[] $typeConverters */
+		$typeConverters = [];
+		/** @var Player[][] $converterRecipients */
+		$converterRecipients = [];
+		foreach($players as $recipient){
+			$typeConverter = $recipient->getNetworkSession()->getTypeConverter();
+			$typeConverters[spl_object_id($typeConverter)] = $typeConverter;
+			$converterRecipients[spl_object_id($typeConverter)][spl_object_id($recipient)] = $recipient;
+		}
+
+		return [
+			$typeConverters,
+			$converterRecipients
+		];
+	}
+
+	/**
+	 * @param Player[] $players
+	 * @phpstan-param \Closure(TypeConverter) : ClientboundPacket[] $closure
+	 */
+	public static function broadcastByTypeConverter(array $players, \Closure $closure) : void{
+		Utils::validateCallableSignature(new CallbackType(
+			new ReturnType(BuiltInTypes::ARRAY, ReturnType::COVARIANT),
+			new ParameterType('typeConverter', TypeConverter::class),
+		), $closure);
+
+		[$typeConverters, $converterRecipients] = self::sortByConverter($players);
+
+		foreach($typeConverters as $key => $typeConverter){
+			$packets = $closure($typeConverter);
+			if(count($packets) > 0){
+				NetworkBroadcastUtils::broadcastPackets($converterRecipients[$key], $packets);
+			}
+		}
 	}
 
 	public function deserializeItemStackExtraData(string $extraData, int $id) : ItemStackExtraData{

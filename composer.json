@@ -1,8 +1,8 @@
 {
-   "name": "pocketmine/pocketmine-mp",
-   "description": "A server software for Minecraft: Bedrock Edition written in PHP",
+   "name": "gravitygdev/pocketmine-mp",
+   "description": "Community-maintained PocketMine-MP continuation with Minecraft Bedrock 1.26.45 support",
    "type": "project",
-   "homepage": "https://pmmp.io",
+   "homepage": "https://github.com/GravityGDev/PocketMine-MP",
    "license": "LGPL-3.0",
    "require": {
       "php": "^8.1",
@@ -35,9 +35,8 @@
       "adhocore/json-comment": "~1.2.0",
       "netresearch/jsonmapper": "~v5.0.0",
       "pocketmine/bedrock-block-upgrade-schema": "~5.2.0+bedrock-1.21.110",
-      "pocketmine/bedrock-data": "~6.7.0+bedrock-1.26.30",
+      "nethergamesmc/bedrock-data": "dev-master",
       "pocketmine/bedrock-item-upgrade-schema": "~1.17.0+bedrock-1.26.20",
-      "pocketmine/bedrock-protocol": "~58.0.0+bedrock-1.26.30",
       "pocketmine/binaryutils": "^0.2.1",
       "pocketmine/callback-validator": "~1.0.4",
       "pocketmine/color": "^0.3.0",
@@ -59,7 +58,8 @@
    },
    "replace": {
       "symfony/polyfill-ctype": "*",
-      "symfony/polyfill-mbstring": "*"
+      "symfony/polyfill-mbstring": "*",
+      "pocketmine/pocketmine-mp": "*"
    },
    "autoload": {
       "psr-4": {
@@ -93,11 +93,17 @@
       "update-codegen": [
          "@php build/codegen/bedrockdata-path-consts.php",
          "@php build/codegen/biome-ids.php",
-         "@php build/codegen/block-serializer-consts.php vendor/pocketmine/bedrock-data/canonical_block_states.nbt",
-         "@php build/codegen/item-type-names.php vendor/pocketmine/bedrock-data/required_item_list.json",
+         "@php build/codegen/block-serializer-consts.php vendor/nethergamesmc/bedrock-data/canonical_block_states.nbt",
+         "@php build/codegen/item-type-names.php vendor/nethergamesmc/bedrock-data/required_item_list.json",
          "@php build/codegen/known-translation-apis.php",
          "@php build/codegen/pocketmine-yml-property-consts.php",
          "@php build/codegen/registry-interface.php src generated"
       ]
-   }
+   },
+   "repositories": [
+      {
+         "type": "vcs",
+         "url": "https://github.com/NetherGamesMC/BedrockData.git"
+      }
+   ]
 }
