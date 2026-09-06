@@ -29,9 +29,15 @@ use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
 use function count;
 
-class Fence extends Transparent{
+class Fence extends Transparent implements Waterloggable{
+	use WaterloggableTrait;
+
 	/** @var bool[] facing => dummy */
 	protected array $connections = [];
+
+	public function canBeWaterlogged() : bool{
+		return true;
+	}
 
 	public function getThickness() : float{
 		return 0.25;
