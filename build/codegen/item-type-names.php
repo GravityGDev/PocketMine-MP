@@ -48,9 +48,7 @@ function constifyMcId(string $id) : string{
 	return strtoupper(explode(":", $id, 2)[1]);
 }
 
-/**
- * @return resource
- */
+/** @return resource */
 function safe_fopen(string $file, string $flags){
 	$dir = dirname($file);
 	if(!@mkdir($dir, recursive: true) && !is_dir($dir)){
