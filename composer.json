@@ -1,8 +1,8 @@
 {
-   "name": "syntaxstudiosre/pocketmine-mp",
-   "description": "SyntaxStudios fork of NetherGamesMC's multi-protocol PocketMine-MP, used to power our Bedrock servers",
+   "name": "gravitygdev/pocketmine-mp",
+   "description": "Community-maintained PocketMine-MP continuation with Minecraft Bedrock 1.26.45 support",
    "type": "project",
-   "homepage": "https://github.com/SyntaxStudiosRE/PocketMine-MP",
+   "homepage": "https://github.com/GravityGDev/PocketMine-MP",
    "license": "LGPL-3.0",
    "require": {
       "php": "^8.1",
@@ -103,7 +103,7 @@
    "repositories": [
       {
          "type": "vcs",
-         "url":  "git@github.com:NetherGamesMC/BedrockData.git"
+         "url": "https://github.com/NetherGamesMC/BedrockData.git"
       }
    ]
 }
