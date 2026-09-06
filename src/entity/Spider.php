@@ -39,8 +39,16 @@ class Spider extends HostileMob{
 		return new EntitySizeInfo(0.9, 1.4);
 	}
 
+	protected function getInitialMaxHealth() : int{
+		return 16;
+	}
+
+	protected function getMeleeDamage() : float{
+		return 2.0;
+	}
+
 	protected function initEntity(CompoundTag $nbt) : void{
-		$this->setMaxHealth(16);
+		$this->setMaxHealth($this->getInitialMaxHealth());
 		parent::initEntity($nbt);
 		$this->setCanClimbWalls();
 	}
@@ -51,12 +59,16 @@ class Spider extends HostileMob{
 			16.0,
 			fn(Player $_player) : bool => $this->isDarkEnoughToAcquireTarget()
 		));
-		$this->getGoalSelector()->addGoal(2, new MeleeAttackGoal($this, 0.12, 2.0, 2.0));
+		$this->getGoalSelector()->addGoal(2, $this->createMeleeAttackGoal());
 		$this->getGoalSelector()->addGoal(7, new RandomStrollGoal($this, 0.1, 8, 70));
 		$this->getGoalSelector()->addGoal(8, new LookAtPlayerGoal($this, 8.0));
 	}
 
-	private function isDarkEnoughToAcquireTarget() : bool{
+	protected function createMeleeAttackGoal() : MeleeAttackGoal{
+		return new MeleeAttackGoal($this, 0.12, $this->getMeleeDamage(), 2.0);
+	}
+
+	protected function isDarkEnoughToAcquireTarget() : bool{
 		$position = $this->getPosition();
 		return $this->getWorld()->getFullLightAt(
 			(int) floor($position->x),
