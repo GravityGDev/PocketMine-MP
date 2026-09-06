@@ -63,7 +63,10 @@ class EffectManager extends EffectCollection{
 		$oldEffect = $this->effects[$index] ?? null;
 
 		$ev = new EntityEffectAddEvent($this->entity, $effect, $oldEffect);
-		if(!$this->canAdd($effect)){
+		if(
+			!$this->canAdd($effect) ||
+			($this->entity instanceof EffectImmunity && $this->entity->isImmuneToEffect($effect->getType()))
+		){
 			$ev->cancel();
 		}
 
