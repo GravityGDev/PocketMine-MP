@@ -1,0 +1,20 @@
+services:
+  pocketmine:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        GIT_HASH: ${GIT_HASH:-619fa4d8d52eef5ce3bbd9b3712ba1fd87c7ec32}
+    restart: unless-stopped
+    ports:
+      - "19132:19132/udp"
+      - "19133:19133/udp"
+    volumes:
+      - pocketmine-data:/data
+      - pocketmine-plugins:/plugins
+    environment:
+      POCKETMINE_ARGS: ""
+
+volumes:
+  pocketmine-data:
+  pocketmine-plugins:
