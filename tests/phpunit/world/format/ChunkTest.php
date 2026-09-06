@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\world\format;
 
 use PHPUnit\Framework\TestCase;
+use pocketmine\block\Block;
 
 class ChunkTest extends TestCase{
 
@@ -54,5 +55,15 @@ class ChunkTest extends TestCase{
 		self::assertSame(10, $chunk->getBlockStateIdAtLayer(1, 64, 2, 0));
 		self::assertSame(20, $chunk->getBlockStateIdAtLayer(1, 64, 2, 1));
 		self::assertTrue($chunk->getTerrainDirtyFlag(Chunk::DIRTY_FLAG_BLOCKS));
+	}
+
+	public function testGarbageCollectionPreservesSecondaryLayerIndex() : void{
+		$chunk = new Chunk([], false);
+		$chunk->setBlockStateIdAtLayer(1, 64, 2, 1, 20);
+
+		$chunk->collectGarbage();
+
+		self::assertSame(Block::EMPTY_STATE_ID, $chunk->getBlockStateIdAtLayer(1, 64, 2, 0));
+		self::assertSame(20, $chunk->getBlockStateIdAtLayer(1, 64, 2, 1));
 	}
 }
