@@ -24,9 +24,12 @@ declare(strict_types=1);
 namespace pocketmine\entity\projectile;
 
 use pocketmine\block\Block;
+use pocketmine\data\bedrock\EffectIdMap;
 use pocketmine\entity\animation\ArrowShakeAnimation;
+use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\Entity;
 use pocketmine\entity\EntitySizeInfo;
+use pocketmine\entity\Living;
 use pocketmine\entity\Location;
 use pocketmine\event\entity\EntityItemPickupEvent;
 use pocketmine\event\entity\ProjectileHitEvent;
@@ -55,16 +58,26 @@ class Arrow extends Projectile{
 	private const TAG_PICKUP = "pickup"; //TAG_Byte
 	public const TAG_CRIT = "crit"; //TAG_Byte
 	private const TAG_LIFE = "life"; //TAG_Short
+	private const TAG_HIT_EFFECT = "MobHitEffect"; //TAG_Compound
+	private const TAG_HIT_EFFECT_ID = "Id"; //TAG_Int
+	private const TAG_HIT_EFFECT_DURATION = "Duration"; //TAG_Int
+	private const TAG_HIT_EFFECT_AMPLIFIER = "Amplifier"; //TAG_Int
+	private const TAG_HIT_EFFECT_VISIBLE = "Visible"; //TAG_Byte
+	private const TAG_HIT_EFFECT_AMBIENT = "Ambient"; //TAG_Byte
 
 	protected float $damage = 2.0;
 	protected int $pickupMode = self::PICKUP_ANY;
 	protected float $punchKnockback = 0.0;
 	protected int $collideTicks = 0;
 	protected bool $critical = false;
+	private ?EffectInstance $hitEffect = null;
 
-	public function __construct(Location $location, ?Entity $shootingEntity, bool $critical, ?CompoundTag $nbt = null){
+	public function __construct(Location $location, ?Entity $shootingEntity, bool $critical, ?CompoundTag $nbt = null, ?EffectInstance $hitEffect = null){
 		parent::__construct($location, $shootingEntity, $nbt);
 		$this->setCritical($critical);
+		if($hitEffect !== null){
+			$this->setHitEffect($hitEffect);
+		}
 	}
 
 	protected function getInitialSizeInfo() : EntitySizeInfo{ return new EntitySizeInfo(0.25, 0.25); }
@@ -79,6 +92,19 @@ class Arrow extends Projectile{
 		$this->pickupMode = $nbt->getByte(self::TAG_PICKUP, self::PICKUP_ANY);
 		$this->critical = $nbt->getByte(self::TAG_CRIT, 0) === 1;
 		$this->collideTicks = $nbt->getShort(self::TAG_LIFE, $this->collideTicks);
+
+		if(($effectTag = $nbt->getCompoundTag(self::TAG_HIT_EFFECT)) !== null){
+			$effectType = EffectIdMap::getInstance()->fromId($effectTag->getInt(self::TAG_HIT_EFFECT_ID, -1));
+			if($effectType !== null){
+				$this->hitEffect = new EffectInstance(
+					$effectType,
+					$effectTag->getInt(self::TAG_HIT_EFFECT_DURATION, 0),
+					$effectTag->getInt(self::TAG_HIT_EFFECT_AMPLIFIER, 0),
+					$effectTag->getByte(self::TAG_HIT_EFFECT_VISIBLE, 1) !== 0,
+					$effectTag->getByte(self::TAG_HIT_EFFECT_AMBIENT, 0) !== 0
+				);
+			}
+		}
 	}
 
 	public function saveNBT() : CompoundTag{
@@ -86,6 +112,15 @@ class Arrow extends Projectile{
 		$nbt->setByte(self::TAG_PICKUP, $this->pickupMode);
 		$nbt->setByte(self::TAG_CRIT, $this->critical ? 1 : 0);
 		$nbt->setShort(self::TAG_LIFE, $this->collideTicks);
+		if($this->hitEffect !== null){
+			$nbt->setTag(self::TAG_HIT_EFFECT, CompoundTag::create()
+				->setInt(self::TAG_HIT_EFFECT_ID, EffectIdMap::getInstance()->toId($this->hitEffect->getType()))
+				->setInt(self::TAG_HIT_EFFECT_DURATION, $this->hitEffect->getDuration())
+				->setInt(self::TAG_HIT_EFFECT_AMPLIFIER, $this->hitEffect->getAmplifier())
+				->setByte(self::TAG_HIT_EFFECT_VISIBLE, $this->hitEffect->isVisible() ? 1 : 0)
+				->setByte(self::TAG_HIT_EFFECT_AMBIENT, $this->hitEffect->isAmbient() ? 1 : 0)
+			);
+		}
 		return $nbt;
 	}
 
@@ -96,6 +131,14 @@ class Arrow extends Projectile{
 	public function setCritical(bool $value = true) : void{
 		$this->critical = $value;
 		$this->networkPropertiesDirty = true;
+	}
+
+	public function getHitEffect() : ?EffectInstance{
+		return $this->hitEffect === null ? null : clone $this->hitEffect;
+	}
+
+	public function setHitEffect(?EffectInstance $effect) : void{
+		$this->hitEffect = $effect === null ? null : clone $effect;
 	}
 
 	public function getResultDamage() : int{
@@ -147,6 +190,9 @@ class Arrow extends Projectile{
 
 	protected function onHitEntity(Entity $entityHit, RayTraceResult $hitResult) : void{
 		parent::onHitEntity($entityHit, $hitResult);
+		if($this->hitEffect !== null && $entityHit instanceof Living && $entityHit->isAlive()){
+			$entityHit->getEffects()->add(clone $this->hitEffect);
+		}
 		if($this->punchKnockback > 0){
 			$horizontalSpeed = sqrt($this->motion->x ** 2 + $this->motion->z ** 2);
 			if($horizontalSpeed > 0){
