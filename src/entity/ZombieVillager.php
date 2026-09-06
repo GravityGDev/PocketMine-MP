@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace pocketmine\entity;
 
 use pocketmine\item\Item;
+use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 
 class ZombieVillager extends Zombie{
@@ -29,7 +30,6 @@ class ZombieVillager extends Zombie{
 	}
 
 	public function getPickedItem() : ?Item{
-		//TODO: wire the Zombie Villager spawn egg after regenerating the vanilla item registry
-		return null;
+		return VanillaSpawnEggs::ZOMBIE_VILLAGER();
 	}
 }
