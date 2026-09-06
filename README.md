@@ -2,15 +2,47 @@
 
 A community-maintained continuation of the archived **PocketMine-MP** server software for Minecraft: Bedrock Edition.
 
-## Current Bedrock target
+## Current release
 
+- **GravityG-PocketMine-MP:** 5.45.0
 - **Minecraft display version:** v26.45
 - **Network version:** 1.26.45
 - **Protocol:** 2169
-- **PocketMine-MP base/API line:** 5.44.3 / API 5 compatible
+- **Upstream base:** PocketMine-MP 5.44.3
+- **API line:** API 5 compatible
 - **PHP:** PMMP-compatible PHP 8.1+
 
 This fork keeps the multi-protocol work inherited from NetherGamesMC and SyntaxStudiosRE, including the protocol changes required by Bedrock 1.26.40+ and the 1.26.45 protocol 2169 target.
+
+## Update log — 5.45.0
+
+Released as the first GravityG-maintained version after the official PMMP 5.44.3 line was archived.
+
+### Bedrock support
+
+- Updated the active Bedrock target to **v26.45 / network 1.26.45**.
+- Added **protocol 2169** support.
+- Reused the 1.26.40+ serializer path for 1.26.45 where Mojang made no packet serializer changes.
+- Retained the inherited multi-protocol compatibility layer for older supported Bedrock protocol versions.
+
+### GravityG continuation changes
+
+- Renamed the runtime branding to **GravityG-PocketMine-MP**.
+- Updated Composer package identity to `gravitygdev/pocketmine-mp`.
+- Updated repository/source links to `GravityGDev/PocketMine-MP`.
+- Fixed startup code that still referenced the old `syntaxstudiosre/pocketmine-mp` Composer package name.
+
+### Build and deployment
+
+- Added automatic PHAR release builds through GitHub Actions.
+- Release assets include the PHAR, SHA-256 checksum, build metadata and launcher scripts.
+- Fixed the Docker build after the move to `nethergamesmc/bedrock-data` by removing the obsolete `vendor/pocketmine/bedrock-data/.minify_json.php` build step.
+- Added a root `docker-compose.yml` for Dokploy/Docker Compose testing.
+- Verified the server boots successfully in Dokploy, creates the default world, reaches 100% spawn generation and opens the Bedrock network interface on UDP port 19132.
+
+### Validation status
+
+The server runtime and Docker deployment have been successfully boot-tested. A real Bedrock v26.45 client connection is the final protocol/gameplay validation step before considering the release fully production-verified.
 
 ## Downloads
 
