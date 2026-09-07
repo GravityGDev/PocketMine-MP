@@ -79,6 +79,15 @@ abstract class Mob extends Living{
 		return false;
 	}
 
+	/**
+	 * Resolves the actual motion speed used by MoveControl. The requested speed
+	 * is preserved for ordinary mobs; amphibious mobs may override this to model
+	 * separate Bedrock land and underwater movement components.
+	 */
+	public function getNavigationMovementSpeed(float $requestedSpeed, bool $inWater) : float{
+		return $requestedSpeed;
+	}
+
 	protected function registerGoals() : void{
 		//Implemented by concrete mobs as vanilla behaviours are restored.
 	}
