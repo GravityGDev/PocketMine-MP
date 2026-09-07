@@ -57,9 +57,11 @@ final class MoveControl{
 		$dy = $this->target->y - $location->y;
 		$dz = $this->target->z - $location->z;
 		$horizontalDistance = sqrt($dx * $dx + $dz * $dz);
-		$movementSpeed = $this->speed > 0.0 ? $this->speed : 0.1;
+		$inWater = $this->isSwimming();
+		$requestedSpeed = $this->speed > 0.0 ? $this->speed : 0.1;
+		$movementSpeed = $this->mob->getNavigationMovementSpeed($requestedSpeed, $inWater);
 
-		if($this->isSwimming()){
+		if($inWater){
 			$distance = sqrt($dx * $dx + $dy * $dy + $dz * $dz);
 			if($distance < 0.05){
 				$this->stop();
