@@ -37,7 +37,9 @@ use pocketmine\world\BlockTransaction;
 use pocketmine\world\World;
 use function mt_rand;
 
-class Leaves extends Transparent{
+class Leaves extends Transparent implements Waterloggable{
+	use WaterloggableTrait;
+
 	private const MAX_LOG_DISTANCE = 4;
 
 	protected LeavesType $leavesType; //immutable for now
@@ -47,6 +49,10 @@ class Leaves extends Transparent{
 	public function __construct(BlockIdentifier $idInfo, string $name, BlockTypeInfo $typeInfo, LeavesType $leavesType){
 		parent::__construct($idInfo, $name, $typeInfo);
 		$this->leavesType = $leavesType;
+	}
+
+	public function canBeWaterlogged() : bool{
+		return true;
 	}
 
 	protected function describeBlockOnlyState(RuntimeDataDescriber $w) : void{
@@ -98,7 +104,7 @@ class Leaves extends Transparent{
 				if($this->findLog($pos->getSide($side), $visited, $distance + 1)){
 					return true;
 				}
-			}
+		}
 		}
 
 		return false;
