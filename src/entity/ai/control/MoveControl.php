@@ -18,9 +18,11 @@ declare(strict_types=1);
 
 namespace pocketmine\entity\ai\control;
 
+use pocketmine\block\Water;
 use pocketmine\entity\Mob;
 use pocketmine\math\Vector3;
 use function atan2;
+use function floor;
 use function rad2deg;
 use function sqrt;
 
@@ -52,24 +54,57 @@ final class MoveControl{
 
 		$location = $this->mob->getLocation();
 		$dx = $this->target->x - $location->x;
+		$dy = $this->target->y - $location->y;
 		$dz = $this->target->z - $location->z;
 		$horizontalDistance = sqrt($dx * $dx + $dz * $dz);
+		$movementSpeed = $this->speed > 0.0 ? $this->speed : 0.1;
+
+		if($this->isSwimming()){
+			$distance = sqrt($dx * $dx + $dy * $dy + $dz * $dz);
+			if($distance < 0.05){
+				$this->stop();
+				return;
+			}
+
+			$this->mob->setMotion(new Vector3(
+				$dx / $distance * $movementSpeed,
+				$dy / $distance * $movementSpeed,
+				$dz / $distance * $movementSpeed
+			));
+			if($horizontalDistance >= 0.001){
+				$this->mob->setRotation(rad2deg(atan2(-$dx, $dz)), $location->pitch);
+			}
+			return;
+		}
+
 		if($horizontalDistance < 0.05){
 			$this->stop();
 			return;
 		}
 
 		$motion = $this->mob->getMotion();
-		$horizontalSpeed = $this->speed > 0.0 ? $this->speed : 0.1;
 		$this->mob->setMotion(new Vector3(
-			$dx / $horizontalDistance * $horizontalSpeed,
+			$dx / $horizontalDistance * $movementSpeed,
 			$motion->y,
-			$dz / $horizontalDistance * $horizontalSpeed
+			$dz / $horizontalDistance * $movementSpeed
 		));
 		$this->mob->setRotation(rad2deg(atan2(-$dx, $dz)), $location->pitch);
 
 		if($this->mob->isCollidedHorizontally && $this->mob->onGround){
 			$this->jumpControl->jump();
 		}
+	}
+
+	private function isSwimming() : bool{
+		if(!$this->mob->canNavigateInWater()){
+			return false;
+		}
+
+		$position = $this->mob->getPosition();
+		return $this->mob->getWorld()->getBlockAt(
+			(int) floor($position->x),
+			(int) floor($position->y),
+			(int) floor($position->z)
+		) instanceof Water;
 	}
 }
