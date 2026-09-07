@@ -23,14 +23,20 @@ use pocketmine\entity\ai\control\LookControl;
 use pocketmine\entity\ai\control\MoveControl;
 use pocketmine\entity\ai\goal\GoalSelector;
 use pocketmine\entity\ai\navigation\GroundNavigation;
+use pocketmine\item\Item;
+use pocketmine\item\VanillaItems;
 use pocketmine\math\VoxelRayTrace;
 use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\network\mcpe\EntityEventBroadcaster;
+use pocketmine\network\mcpe\NetworkBroadcastUtils;
+use pocketmine\player\Player;
 
 /**
  * Base class for server-driven vanilla-style mobs.
  */
 abstract class Mob extends Living{
 	private const TAG_NO_AI = "NoAI"; //TAG_Byte
+	private const TAG_MAIN_HAND_ITEM = "MainHandItem"; //TAG_Compound
 
 	private GoalSelector $goalSelector;
 	private GoalSelector $targetSelector;
@@ -39,10 +45,13 @@ abstract class Mob extends Living{
 	private JumpControl $jumpControl;
 	private GroundNavigation $navigation;
 	private bool $hasAi = true;
+	private Item $mainHandItem;
 
 	protected function initEntity(CompoundTag $nbt) : void{
 		parent::initEntity($nbt);
 
+		$mainHandItemTag = $nbt->getCompoundTag(self::TAG_MAIN_HAND_ITEM);
+		$this->mainHandItem = $mainHandItemTag !== null ? Item::safeNbtDeserialize($mainHandItemTag, "Mob main-hand item") : VanillaItems::AIR();
 		$this->hasAi = $nbt->getByte(self::TAG_NO_AI, 0) === 0;
 		$this->goalSelector = new GoalSelector();
 		$this->targetSelector = new GoalSelector();
@@ -73,7 +82,36 @@ abstract class Mob extends Living{
 	public function saveNBT() : CompoundTag{
 		$nbt = parent::saveNBT();
 		$nbt->setByte(self::TAG_NO_AI, $this->hasAi ? 0 : 1);
+		if(!$this->mainHandItem->isNull()){
+			$nbt->setTag(self::TAG_MAIN_HAND_ITEM, $this->mainHandItem->nbtSerialize());
+		}else{
+			$nbt->removeTag(self::TAG_MAIN_HAND_ITEM);
+		}
 		return $nbt;
+	}
+
+	public function getMainHandItem() : Item{
+		return clone $this->mainHandItem;
+	}
+
+	public function setMainHandItem(Item $item) : void{
+		if($this->mainHandItem->equalsExact($item)){
+			return;
+		}
+
+		$this->mainHandItem = clone $item;
+		NetworkBroadcastUtils::broadcastEntityEvent(
+			$this->getViewers(),
+			fn(EntityEventBroadcaster $broadcaster, array $recipients) => $broadcaster->onMobMainHandItemChange($recipients, $this)
+		);
+	}
+
+	protected function sendSpawnPacket(Player $player) : void{
+		parent::sendSpawnPacket($player);
+		$networkSession = $player->getNetworkSession();
+		$entityEventBroadcaster = $networkSession->getEntityEventBroadcaster();
+		$entityEventBroadcaster->onMobMainHandItemChange([$networkSession], $this);
+		$entityEventBroadcaster->onMobArmorChange([$networkSession], $this);
 	}
 
 	public function hasAi() : bool{
