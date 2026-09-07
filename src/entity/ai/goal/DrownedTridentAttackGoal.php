@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace pocketmine\entity\ai\goal;
 
+use pocketmine\entity\Living;
 use pocketmine\entity\Location;
 use pocketmine\entity\Mob;
 use pocketmine\entity\projectile\Trident as ThrownTrident;
@@ -25,7 +26,6 @@ use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\item\Trident as TridentItem;
 use pocketmine\math\Vector3;
-use pocketmine\player\Player;
 use pocketmine\world\sound\TridentThrowSound;
 use function mt_rand;
 use function sqrt;
@@ -61,7 +61,7 @@ final class DrownedTridentAttackGoal extends Goal{
 		}
 
 		$target = $this->mob->getTargetEntity();
-		if(!$target instanceof Player){
+		if(!$target instanceof Living){
 			return;
 		}
 
@@ -97,7 +97,7 @@ final class DrownedTridentAttackGoal extends Goal{
 		}
 	}
 
-	private function tickMelee(Player $target, float $distanceSquared) : void{
+	private function tickMelee(Living $target, float $distanceSquared) : void{
 		if($distanceSquared > 1.8 * 1.8 || !$this->mob->canSee($target)){
 			$this->mob->getNavigation()->moveTo($target->getPosition(), $this->speed);
 			return;
@@ -115,7 +115,7 @@ final class DrownedTridentAttackGoal extends Goal{
 		}
 	}
 
-	private function throwTrident(Player $target) : void{
+	private function throwTrident(Living $target) : void{
 		$source = $this->mob->getEyePos();
 		$targetEye = $target->getEyePos();
 		$dx = $targetEye->x - $source->x;
@@ -150,6 +150,6 @@ final class DrownedTridentAttackGoal extends Goal{
 
 	private function hasValidTarget() : bool{
 		$target = $this->mob->getTargetEntity();
-		return $target instanceof Player && $target->isAlive();
+		return $target instanceof Living && $target->isAlive();
 	}
 }
