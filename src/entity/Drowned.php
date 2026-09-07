@@ -45,8 +45,8 @@ class Drowned extends Zombie{
 	private const TAG_EQUIPMENT_INITIALIZED = "DrownedEquipmentInitialized";
 	private const TAG_RANGED_MODE = "DrownedRangedMode";
 	private const TAG_FROM_ZOMBIE_CONVERSION = "DrownedFromZombieConversion";
-	private const LAND_MOVEMENT_SPEED = 0.25;
-	private const UNDERWATER_MOVEMENT_SPEED = 0.10;
+	private const LAND_MOVEMENT_SPEED = 0.23;
+	private const UNDERWATER_MOVEMENT_SPEED = 0.06;
 
 	private bool $equipmentInitialized = false;
 	private bool $rangedMode = false;
@@ -86,9 +86,13 @@ class Drowned extends Zombie{
 	}
 
 	protected function registerGoals() : void{
-		$this->getTargetSelector()->addGoal(1, new HurtByTargetGoal($this, 35.0, true));
-		$targetFilter = fn(Living $target) : bool => $this->canTargetLiving($target);
-		$this->getTargetSelector()->addGoal(2, new NearestLivingTargetGoal($this, 12.0, $targetFilter, $targetFilter));
+		$this->getTargetSelector()->addGoal(1, new HurtByTargetGoal($this, 35.0));
+
+		$playerFilter = fn(Living $target) : bool => $this->canTargetPlayer($target);
+		$this->getTargetSelector()->addGoal(2, new NearestLivingTargetGoal($this, 12.0, $playerFilter, $playerFilter));
+
+		$villagerFilter = fn(Living $target) : bool => $target instanceof Villager && ($this->isNight() || $this->isEntityInWater($target));
+		$this->getTargetSelector()->addGoal(2, new NearestLivingTargetGoal($this, 12.0, $villagerFilter, $villagerFilter, false));
 
 		$this->getGoalSelector()->addGoal(2, new FleeSunGoal($this, 0.1));
 		$this->getGoalSelector()->addGoal(3, $this->rangedMode ?
@@ -104,14 +108,14 @@ class Drowned extends Zombie{
 		return new GroundNavigation($this, new AmphibiousPathfinder($this));
 	}
 
-	private function canTargetLiving(Living $target) : bool{
-		if($target instanceof Player){
-			$gamemode = $target->getGamemode();
-			return ($gamemode === GameMode::SURVIVAL || $gamemode === GameMode::ADVENTURE) &&
-				($this->isNight() || $this->isEntityInWater($target));
+	private function canTargetPlayer(Living $target) : bool{
+		if(!$target instanceof Player){
+			return false;
 		}
 
-		return $target instanceof Villager;
+		$gamemode = $target->getGamemode();
+		return ($gamemode === GameMode::SURVIVAL || $gamemode === GameMode::ADVENTURE) &&
+			($this->isNight() || $this->isEntityInWater($target));
 	}
 
 	private function isNight() : bool{
