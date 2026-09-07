@@ -30,8 +30,13 @@ use pocketmine\math\Axis;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
 
-class Chain extends Transparent implements PillarRotation{
+class Chain extends Transparent implements PillarRotation, Waterloggable{
 	use PillarRotationTrait;
+	use WaterloggableTrait;
+
+	public function canBeWaterlogged() : bool{
+		return true;
+	}
 
 	public function getSupportType(int $facing) : SupportType{
 		return $this->axis === Axis::Y && Facing::axis($facing) === Axis::Y ? SupportType::CENTER : SupportType::NONE;

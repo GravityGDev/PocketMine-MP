@@ -33,7 +33,9 @@ use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 
-class Lantern extends Transparent{
+class Lantern extends Transparent implements Waterloggable{
+	use WaterloggableTrait;
+
 	private int $lightLevel; //readonly
 
 	protected bool $hanging = false;
@@ -45,6 +47,10 @@ class Lantern extends Transparent{
 
 	protected function describeBlockOnlyState(RuntimeDataDescriber $w) : void{
 		$w->bool($this->hanging);
+	}
+
+	public function canBeWaterlogged() : bool{
+		return true;
 	}
 
 	public function isHanging() : bool{ return $this->hanging; }
