@@ -29,6 +29,7 @@ use function spl_object_id;
  */
 final class HurtByTargetGoal extends Goal{
 	private ?Living $attacker = null;
+	private ?Living $alertedAttacker = null;
 	private ?int $lastHandledDamageEventId = null;
 
 	public function __construct(
@@ -39,7 +40,22 @@ final class HurtByTargetGoal extends Goal{
 		$this->setFlags(self::FLAG_TARGET);
 	}
 
+	public function setAlertTarget(Living $attacker) : void{
+		if($attacker !== $this->mob && $attacker->isAlive() && $attacker->getWorld() === $this->mob->getWorld()){
+			$this->alertedAttacker = $attacker;
+		}
+	}
+
 	public function canStart() : bool{
+		if($this->alertedAttacker !== null){
+			$attacker = $this->alertedAttacker;
+			$this->alertedAttacker = null;
+			if($this->isValidAttacker($attacker)){
+				$this->attacker = $attacker;
+				return true;
+			}
+		}
+
 		$damageEvent = $this->mob->getLastDamageCause();
 		if(!$damageEvent instanceof EntityDamageByEntityEvent){
 			return false;
@@ -97,8 +113,16 @@ final class HurtByTargetGoal extends Goal{
 			$dx = $otherPosition->x - $position->x;
 			$dy = $otherPosition->y - $position->y;
 			$dz = $otherPosition->z - $position->z;
-			if(($dx * $dx + $dy * $dy + $dz * $dz) <= $rangeSquared){
-				$entity->setTargetEntity($attacker);
+			if(($dx * $dx + $dy * $dy + $dz * $dz) > $rangeSquared){
+				continue;
+			}
+
+			foreach($entity->getTargetSelector()->getAvailableGoals() as $entry){
+				$goal = $entry->getGoal();
+				if($goal instanceof self){
+					$goal->setAlertTarget($attacker);
+					break;
+				}
 			}
 		}
 	}
