@@ -23,7 +23,12 @@ declare(strict_types=1);
 
 namespace pocketmine\block;
 
-final class MangroveRoots extends Transparent{
+final class MangroveRoots extends Transparent implements Waterloggable{
+	use WaterloggableTrait;
+
+	public function canBeWaterlogged() : bool{
+		return true;
+	}
 
 	public function getFlammability() : int{ return 5; }
 
