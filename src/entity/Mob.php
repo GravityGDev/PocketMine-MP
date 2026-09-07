@@ -49,9 +49,21 @@ abstract class Mob extends Living{
 		$this->jumpControl = new JumpControl($this);
 		$this->moveControl = new MoveControl($this, $this->jumpControl);
 		$this->lookControl = new LookControl($this);
-		$this->navigation = new GroundNavigation($this);
+		$this->navigation = $this->createNavigation();
 		$this->stepHeight = 0.6;
 		$this->registerGoals();
+	}
+
+	protected function createNavigation() : GroundNavigation{
+		return new GroundNavigation($this);
+	}
+
+	/**
+	 * Returns whether this mob may use three-dimensional water paths.
+	 * Amphibious mobs override this while ordinary land mobs remain ground-only.
+	 */
+	public function canNavigateInWater() : bool{
+		return false;
 	}
 
 	protected function registerGoals() : void{
