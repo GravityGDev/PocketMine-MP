@@ -100,6 +100,7 @@ class Zombie extends Undead{
 	private function convertToDrowned() : void{
 		$location = clone $this->getLocation();
 		$nbt = $this->saveNBT();
+		Drowned::markZombieConversion($nbt);
 		$drowned = new Drowned($location, $nbt);
 		$this->close();
 		$drowned->spawnToAll();
