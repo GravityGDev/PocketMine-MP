@@ -73,6 +73,10 @@ abstract class BaseSign extends Transparent implements WoodMaterial, Waterloggab
 		$this->asItemCallback = $asItemCallback;
 	}
 
+	public function canBeWaterlogged() : bool{
+		return true;
+	}
+
 	public function readStateFromWorld() : Block{
 		parent::readStateFromWorld();
 		$tile = $this->position->getWorld()->getTile($this->position);
@@ -124,7 +128,6 @@ abstract class BaseSign extends Transparent implements WoodMaterial, Waterloggab
 		if($player !== null){
 			$this->editorEntityRuntimeId = $player->getId();
 		}
-		$this->captureReplacedBlock($blockReplace);
 		return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
 	}
 
