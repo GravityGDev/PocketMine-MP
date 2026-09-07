@@ -47,8 +47,8 @@ final class GroundNavigation{
 	private int $progressCheckTicks = 0;
 	private ?Vector3 $lastProgressPosition = null;
 
-	public function __construct(private Mob $mob){
-		$this->pathfinder = new GroundPathfinder($mob);
+	public function __construct(private Mob $mob, ?GroundPathfinder $pathfinder = null){
+		$this->pathfinder = $pathfinder ?? new GroundPathfinder($mob);
 	}
 
 	public function moveTo(Vector3 $target, float $speed = 0.1) : void{
@@ -100,8 +100,13 @@ final class GroundNavigation{
 		while($this->pathIndex < $pathCount){
 			$waypoint = $this->path[$this->pathIndex];
 			$dx = $waypoint->x - $position->x;
+			$dy = $waypoint->y - $position->y;
 			$dz = $waypoint->z - $position->z;
-			if(($dx * $dx + $dz * $dz) > self::WAYPOINT_REACHED_DISTANCE_SQUARED || abs($waypoint->y - $position->y) > 1.25){
+			if($this->mob->canNavigateInWater()){
+				if(($dx * $dx + $dy * $dy + $dz * $dz) > self::WAYPOINT_REACHED_DISTANCE_SQUARED){
+					break;
+				}
+			}elseif(($dx * $dx + $dz * $dz) > self::WAYPOINT_REACHED_DISTANCE_SQUARED || abs($dy) > 1.25){
 				break;
 			}
 			++$this->pathIndex;
@@ -110,8 +115,12 @@ final class GroundNavigation{
 		if($this->pathIndex >= $pathCount){
 			$target = $this->target;
 			$dx = $target->x - $position->x;
+			$dy = $target->y - $position->y;
 			$dz = $target->z - $position->z;
-			if(($dx * $dx + $dz * $dz) <= self::WAYPOINT_REACHED_DISTANCE_SQUARED){
+			$distanceSquared = $this->mob->canNavigateInWater() ?
+				($dx * $dx + $dy * $dy + $dz * $dz) :
+				($dx * $dx + $dz * $dz);
+			if($distanceSquared <= self::WAYPOINT_REACHED_DISTANCE_SQUARED){
 				$this->stop();
 				return;
 			}
