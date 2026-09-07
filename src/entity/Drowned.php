@@ -18,12 +18,17 @@ declare(strict_types=1);
 
 namespace pocketmine\entity;
 
+use pocketmine\block\Water;
+use pocketmine\entity\ai\goal\NearestPlayerTargetGoal;
 use pocketmine\entity\ai\navigation\AmphibiousPathfinder;
 use pocketmine\entity\ai\navigation\GroundNavigation;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
 use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
+use pocketmine\player\Player;
+use pocketmine\world\World;
+use function floor;
 use function mt_rand;
 
 class Drowned extends Zombie{
@@ -31,6 +36,29 @@ class Drowned extends Zombie{
 
 	protected function createNavigation() : GroundNavigation{
 		return new GroundNavigation($this, new AmphibiousPathfinder($this));
+	}
+
+	protected function createPlayerTargetGoal() : NearestPlayerTargetGoal{
+		$targetFilter = fn(Player $player) : bool => $this->canTargetPlayer($player);
+		return new NearestPlayerTargetGoal($this, 12.0, $targetFilter, $targetFilter);
+	}
+
+	private function canTargetPlayer(Player $player) : bool{
+		return $this->isNight() || $this->isEntityInWater($player);
+	}
+
+	private function isNight() : bool{
+		$time = $this->getWorld()->getTimeOfDay();
+		return $time >= World::TIME_NIGHT && $time < World::TIME_SUNRISE;
+	}
+
+	private function isEntityInWater(Entity $entity) : bool{
+		$position = $entity->getPosition();
+		return $entity->isUnderwater() || $entity->getWorld()->getBlockAt(
+			(int) floor($position->x),
+			(int) floor($position->y),
+			(int) floor($position->z)
+		) instanceof Water;
 	}
 
 	public function canNavigateInWater() : bool{
