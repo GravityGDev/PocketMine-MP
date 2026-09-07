@@ -34,8 +34,13 @@ use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 
-class EnderChest extends Transparent implements HorizontalFacing{
+class EnderChest extends Transparent implements HorizontalFacing, Waterloggable{
 	use FacesOppositePlacingPlayerTrait;
+	use WaterloggableTrait;
+
+	public function canBeWaterlogged() : bool{
+		return true;
+	}
 
 	public function getLightLevel() : int{
 		return 7;
