@@ -125,11 +125,11 @@ final class StandardEntityEventBroadcaster implements EntityEventBroadcaster{
 		));
 	}
 
-	public function onMobOffHandItemChange(array $recipients, Human $mob) : void{
-		$inv = $mob->getOffHandInventory();
+	public function onMobOffHandItemChange(array $recipients, Human|Mob $mob) : void{
+		$item = $mob instanceof Human ? $mob->getOffHandInventory()->getItem(0) : $mob->getOffHandItem();
 		$this->sendDataPacket($recipients, MobEquipmentPacket::create(
 			$mob->getId(),
-			ItemStackWrapper::legacy($this->typeConverter->coreItemStackToNet($inv->getItem(0))),
+			ItemStackWrapper::legacy($this->typeConverter->coreItemStackToNet($item)),
 			0,
 			0,
 			ContainerIds::OFFHAND
