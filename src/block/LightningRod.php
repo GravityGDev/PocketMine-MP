@@ -35,9 +35,14 @@ use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 
-final class LightningRod extends Transparent implements AnyFacing, CopperMaterial{
+final class LightningRod extends Transparent implements AnyFacing, CopperMaterial, Waterloggable{
 	use CopperTrait;
 	use AnyFacingTrait;
+	use WaterloggableTrait;
+
+	public function canBeWaterlogged() : bool{
+		return true;
+	}
 
 	protected function recalculateCollisionBoxes() : array{
 		$myAxis = Facing::axis($this->facing);
