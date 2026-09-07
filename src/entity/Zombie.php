@@ -40,10 +40,14 @@ class Zombie extends Undead{
 	}
 
 	protected function registerGoals() : void{
-		$this->getTargetSelector()->addGoal(1, new NearestPlayerTargetGoal($this, 32.0));
+		$this->getTargetSelector()->addGoal(1, $this->createPlayerTargetGoal());
 		$this->getGoalSelector()->addGoal(2, new MeleeAttackGoal($this, 0.1, 3.0, 1.8));
 		$this->getGoalSelector()->addGoal(7, new RandomStrollGoal($this, 0.08, 8, 80));
 		$this->getGoalSelector()->addGoal(8, new LookAtPlayerGoal($this, 8.0));
+	}
+
+	protected function createPlayerTargetGoal() : NearestPlayerTargetGoal{
+		return new NearestPlayerTargetGoal($this, 32.0);
 	}
 
 	public function getName() : string{
