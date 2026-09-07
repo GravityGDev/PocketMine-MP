@@ -24,6 +24,8 @@ declare(strict_types=1);
 namespace pocketmine\item;
 
 use PHPUnit\Framework\TestCase;
+use function str_replace;
+use function strtoupper;
 
 class StringToItemParserTest extends TestCase{
 
@@ -76,5 +78,34 @@ class StringToItemParserTest extends TestCase{
 
 		self::assertCount(1, $parser->lookupAliases($item2));
 		self::assertContains("alias2", $parser->lookupAliases($item2));
+	}
+
+	public function testRestoredSpawnEggAliases() : void{
+		$eggs = [
+			"bogged_spawn_egg" => ItemTypeIds::BOGGED_SPAWN_EGG,
+			"cave_spider_spawn_egg" => ItemTypeIds::CAVE_SPIDER_SPAWN_EGG,
+			"creeper_spawn_egg" => ItemTypeIds::CREEPER_SPAWN_EGG,
+			"drowned_spawn_egg" => ItemTypeIds::DROWNED_SPAWN_EGG,
+			"endermite_spawn_egg" => ItemTypeIds::ENDERMITE_SPAWN_EGG,
+			"husk_spawn_egg" => ItemTypeIds::HUSK_SPAWN_EGG,
+			"parched_spawn_egg" => ItemTypeIds::PARCHED_SPAWN_EGG,
+			"silverfish_spawn_egg" => ItemTypeIds::SILVERFISH_SPAWN_EGG,
+			"skeleton_spawn_egg" => ItemTypeIds::SKELETON_SPAWN_EGG,
+			"spider_spawn_egg" => ItemTypeIds::SPIDER_SPAWN_EGG,
+			"stray_spawn_egg" => ItemTypeIds::STRAY_SPAWN_EGG,
+			"wither_skeleton_spawn_egg" => ItemTypeIds::WITHER_SKELETON_SPAWN_EGG,
+			"zombie_villager_spawn_egg" => ItemTypeIds::ZOMBIE_VILLAGER_SPAWN_EGG,
+		];
+		$registeredItems = VanillaItems::getAll();
+		$parser = StringToItemParser::getInstance();
+
+		foreach($eggs as $name => $typeId){
+			self::assertArrayHasKey(strtoupper($name), $registeredItems);
+			foreach([$name, "minecraft:" . $name, str_replace("_", " ", $name)] as $alias){
+				$item = $parser->parse($alias);
+				self::assertInstanceOf(SpawnEgg::class, $item, "Failed to parse $alias");
+				self::assertSame($typeId, $item->getTypeId(), "Parsed the wrong item for $alias");
+			}
+		}
 	}
 }

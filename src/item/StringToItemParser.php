@@ -1262,6 +1262,19 @@ final class StringToItemParser extends StringToTParser{
 
 	private static function registerItems(self $result) : void{
 
+		$result->register("bogged_spawn_egg", fn() => Items::BOGGED_SPAWN_EGG());
+		$result->register("cave_spider_spawn_egg", fn() => Items::CAVE_SPIDER_SPAWN_EGG());
+		$result->register("creeper_spawn_egg", fn() => Items::CREEPER_SPAWN_EGG());
+		$result->register("drowned_spawn_egg", fn() => Items::DROWNED_SPAWN_EGG());
+		$result->register("endermite_spawn_egg", fn() => Items::ENDERMITE_SPAWN_EGG());
+		$result->register("husk_spawn_egg", fn() => Items::HUSK_SPAWN_EGG());
+		$result->register("parched_spawn_egg", fn() => Items::PARCHED_SPAWN_EGG());
+		$result->register("silverfish_spawn_egg", fn() => Items::SILVERFISH_SPAWN_EGG());
+		$result->register("skeleton_spawn_egg", fn() => Items::SKELETON_SPAWN_EGG());
+		$result->register("spider_spawn_egg", fn() => Items::SPIDER_SPAWN_EGG());
+		$result->register("stray_spawn_egg", fn() => Items::STRAY_SPAWN_EGG());
+		$result->register("wither_skeleton_spawn_egg", fn() => Items::WITHER_SKELETON_SPAWN_EGG());
+		$result->register("zombie_villager_spawn_egg", fn() => Items::ZOMBIE_VILLAGER_SPAWN_EGG());
 		$result->register("acacia_boat", fn() => Items::ACACIA_BOAT());
 		$result->register("acacia_hanging_sign", fn() => Items::ACACIA_HANGING_SIGN());
 		$result->register("amethyst_shard", fn() => Items::AMETHYST_SHARD());

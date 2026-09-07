@@ -21,6 +21,7 @@ A mob is only considered complete when its relevant health/size/metadata, persis
 - [x] Ranged bow combat goal
 - [x] Ranged tipped-arrow status effects with NBT persistence
 - [x] Per-mob status-effect immunity hook
+- [x] Canonical spawn-egg registry, command parsing and Bedrock item mappings for restored mobs
 - [x] Shared hostile-mob lifecycle and natural-spawn persistence
 - [x] Hostile mob cap/distance despawning
 - [x] Darkness checks for hostile natural spawning

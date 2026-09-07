@@ -24,8 +24,8 @@ declare(strict_types=1);
 namespace pocketmine\data\bedrock\item;
 
 use pocketmine\item\SpawnEgg;
-use pocketmine\item\StringToItemParser;
-use pocketmine\item\VanillaSpawnEggs;
+use pocketmine\item\VanillaItems;
+use pocketmine\utils\Utils;
 
 final class ParitySpawnEggItemMappings{
 
@@ -36,30 +36,26 @@ final class ParitySpawnEggItemMappings{
 	/** @return array<string, SpawnEgg> */
 	private static function getMappings() : array{
 		return [
-			ItemTypeNames::BOGGED_SPAWN_EGG => VanillaSpawnEggs::BOGGED(),
-			ItemTypeNames::CAVE_SPIDER_SPAWN_EGG => VanillaSpawnEggs::CAVE_SPIDER(),
-			ItemTypeNames::CREEPER_SPAWN_EGG => VanillaSpawnEggs::CREEPER(),
-			ItemTypeNames::DROWNED_SPAWN_EGG => VanillaSpawnEggs::DROWNED(),
-			ItemTypeNames::ENDERMITE_SPAWN_EGG => VanillaSpawnEggs::ENDERMITE(),
-			ItemTypeNames::HUSK_SPAWN_EGG => VanillaSpawnEggs::HUSK(),
-			ItemTypeNames::PARCHED_SPAWN_EGG => VanillaSpawnEggs::PARCHED(),
-			ItemTypeNames::SILVERFISH_SPAWN_EGG => VanillaSpawnEggs::SILVERFISH(),
-			ItemTypeNames::SKELETON_SPAWN_EGG => VanillaSpawnEggs::SKELETON(),
-			ItemTypeNames::SPIDER_SPAWN_EGG => VanillaSpawnEggs::SPIDER(),
-			ItemTypeNames::STRAY_SPAWN_EGG => VanillaSpawnEggs::STRAY(),
-			ItemTypeNames::WITHER_SKELETON_SPAWN_EGG => VanillaSpawnEggs::WITHER_SKELETON(),
-			ItemTypeNames::ZOMBIE_VILLAGER_SPAWN_EGG => VanillaSpawnEggs::ZOMBIE_VILLAGER(),
+			ItemTypeNames::BOGGED_SPAWN_EGG => VanillaItems::BOGGED_SPAWN_EGG(),
+			ItemTypeNames::CAVE_SPIDER_SPAWN_EGG => VanillaItems::CAVE_SPIDER_SPAWN_EGG(),
+			ItemTypeNames::CREEPER_SPAWN_EGG => VanillaItems::CREEPER_SPAWN_EGG(),
+			ItemTypeNames::DROWNED_SPAWN_EGG => VanillaItems::DROWNED_SPAWN_EGG(),
+			ItemTypeNames::ENDERMITE_SPAWN_EGG => VanillaItems::ENDERMITE_SPAWN_EGG(),
+			ItemTypeNames::HUSK_SPAWN_EGG => VanillaItems::HUSK_SPAWN_EGG(),
+			ItemTypeNames::PARCHED_SPAWN_EGG => VanillaItems::PARCHED_SPAWN_EGG(),
+			ItemTypeNames::SILVERFISH_SPAWN_EGG => VanillaItems::SILVERFISH_SPAWN_EGG(),
+			ItemTypeNames::SKELETON_SPAWN_EGG => VanillaItems::SKELETON_SPAWN_EGG(),
+			ItemTypeNames::SPIDER_SPAWN_EGG => VanillaItems::SPIDER_SPAWN_EGG(),
+			ItemTypeNames::STRAY_SPAWN_EGG => VanillaItems::STRAY_SPAWN_EGG(),
+			ItemTypeNames::WITHER_SKELETON_SPAWN_EGG => VanillaItems::WITHER_SKELETON_SPAWN_EGG(),
+			ItemTypeNames::ZOMBIE_VILLAGER_SPAWN_EGG => VanillaItems::ZOMBIE_VILLAGER_SPAWN_EGG(),
 		];
 	}
 
 	public static function register(?ItemDeserializer $deserializer, ?ItemSerializer $serializer) : void{
-		$parser = StringToItemParser::getInstance();
-		foreach(self::getMappings() as $bedrockId => $item){
+		foreach(Utils::stringifyKeys(self::getMappings()) as $bedrockId => $item){
 			$deserializer?->map($bedrockId, fn() => clone $item);
 			$serializer?->map($item, fn() => new SavedItemData($bedrockId));
-			if($parser->parse($bedrockId) === null){
-				$parser->register($bedrockId, fn() => clone $item);
-			}
 		}
 	}
 }

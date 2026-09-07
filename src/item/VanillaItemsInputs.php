@@ -341,6 +341,19 @@ final class VanillaItemsInputs extends RegistrySource{
 	}
 
 	private function registerSpawnEggs() : void{
+		self::register("bogged_spawn_egg", fn(IID $id) => VanillaSpawnEggs::BOGGED());
+		self::register("cave_spider_spawn_egg", fn(IID $id) => VanillaSpawnEggs::CAVE_SPIDER());
+		self::register("creeper_spawn_egg", fn(IID $id) => VanillaSpawnEggs::CREEPER());
+		self::register("drowned_spawn_egg", fn(IID $id) => VanillaSpawnEggs::DROWNED());
+		self::register("endermite_spawn_egg", fn(IID $id) => VanillaSpawnEggs::ENDERMITE());
+		self::register("husk_spawn_egg", fn(IID $id) => VanillaSpawnEggs::HUSK());
+		self::register("parched_spawn_egg", fn(IID $id) => VanillaSpawnEggs::PARCHED());
+		self::register("silverfish_spawn_egg", fn(IID $id) => VanillaSpawnEggs::SILVERFISH());
+		self::register("skeleton_spawn_egg", fn(IID $id) => VanillaSpawnEggs::SKELETON());
+		self::register("spider_spawn_egg", fn(IID $id) => VanillaSpawnEggs::SPIDER());
+		self::register("stray_spawn_egg", fn(IID $id) => VanillaSpawnEggs::STRAY());
+		self::register("wither_skeleton_spawn_egg", fn(IID $id) => VanillaSpawnEggs::WITHER_SKELETON());
+		self::register("zombie_villager_spawn_egg", fn(IID $id) => VanillaSpawnEggs::ZOMBIE_VILLAGER());
 		self::register("zombie_spawn_egg", fn(IID $id) => new class($id, "Zombie Spawn Egg") extends SpawnEgg{
 			protected function createEntity(World $world, Vector3 $pos, float $yaw, float $pitch) : Entity{
 				return new Zombie(Location::fromObject($pos, $world, $yaw, $pitch));
