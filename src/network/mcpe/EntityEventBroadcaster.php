@@ -73,7 +73,7 @@ interface EntityEventBroadcaster{
 	/**
 	 * @param NetworkSession[] $recipients
 	 */
-	public function onMobOffHandItemChange(array $recipients, Human $mob) : void;
+	public function onMobOffHandItemChange(array $recipients, Human|Mob $mob) : void;
 
 	/**
 	 * @param NetworkSession[] $recipients
