@@ -29,14 +29,31 @@ use pocketmine\entity\ai\goal\NearestPlayerTargetGoal;
 use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
+use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use function mt_rand;
 
 class Zombie extends Undead{
+	private const TAG_DROWNED_CONVERSION_WATER_TICKS = "DrownedConversionWaterTicks";
+	private const TAG_DROWNED_CONVERSION_DELAY_TICKS = "DrownedConversionDelayTicks";
+	private const DROWNED_CONVERSION_WATER_TICKS = 30 * 20;
+	private const DROWNED_CONVERSION_DELAY_TICKS = 15 * 20;
+
+	private int $drownedConversionWaterTicks = 0;
+	private int $drownedConversionDelayTicks = -1;
+
 	public static function getNetworkTypeId() : string{ return EntityIds::ZOMBIE; }
 
 	protected function getInitialSizeInfo() : EntitySizeInfo{
 		return new EntitySizeInfo(1.9, 0.6); //TODO: eye height ??
+	}
+
+	protected function initEntity(CompoundTag $nbt) : void{
+		parent::initEntity($nbt);
+		if($this->canConvertToDrowned()){
+			$this->drownedConversionWaterTicks = $nbt->getInt(self::TAG_DROWNED_CONVERSION_WATER_TICKS, 0);
+			$this->drownedConversionDelayTicks = $nbt->getInt(self::TAG_DROWNED_CONVERSION_DELAY_TICKS, -1);
+		}
 	}
 
 	protected function registerGoals() : void{
@@ -48,6 +65,53 @@ class Zombie extends Undead{
 
 	protected function createPlayerTargetGoal() : NearestPlayerTargetGoal{
 		return new NearestPlayerTargetGoal($this, 32.0);
+	}
+
+	protected function canConvertToDrowned() : bool{
+		return static::getNetworkTypeId() === EntityIds::ZOMBIE;
+	}
+
+	protected function entityBaseTick(int $tickDiff = 1) : bool{
+		$hasUpdate = parent::entityBaseTick($tickDiff);
+		if(!$this->canConvertToDrowned() || !$this->isAlive() || $this->isFlaggedForDespawn()){
+			return $hasUpdate;
+		}
+
+		if($this->drownedConversionDelayTicks >= 0){
+			$this->drownedConversionDelayTicks -= $tickDiff;
+			if($this->drownedConversionDelayTicks <= 0){
+				$this->convertToDrowned();
+			}
+			return true;
+		}
+
+		if($this->isUnderwater()){
+			$this->drownedConversionWaterTicks += $tickDiff;
+			if($this->drownedConversionWaterTicks >= self::DROWNED_CONVERSION_WATER_TICKS){
+				$this->drownedConversionDelayTicks = self::DROWNED_CONVERSION_DELAY_TICKS;
+			}
+			return true;
+		}
+
+		$this->drownedConversionWaterTicks = 0;
+		return $hasUpdate;
+	}
+
+	private function convertToDrowned() : void{
+		$location = clone $this->getLocation();
+		$nbt = $this->saveNBT();
+		$drowned = new Drowned($location, $nbt);
+		$this->close();
+		$drowned->spawnToAll();
+	}
+
+	public function saveNBT() : CompoundTag{
+		$nbt = parent::saveNBT();
+		if($this->canConvertToDrowned()){
+			$nbt->setInt(self::TAG_DROWNED_CONVERSION_WATER_TICKS, $this->drownedConversionWaterTicks);
+			$nbt->setInt(self::TAG_DROWNED_CONVERSION_DELAY_TICKS, $this->drownedConversionDelayTicks);
+		}
+		return $nbt;
 	}
 
 	public function getName() : string{
