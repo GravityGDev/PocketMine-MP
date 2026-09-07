@@ -45,6 +45,8 @@ class Drowned extends Zombie{
 	private const TAG_EQUIPMENT_INITIALIZED = "DrownedEquipmentInitialized";
 	private const TAG_RANGED_MODE = "DrownedRangedMode";
 	private const TAG_FROM_ZOMBIE_CONVERSION = "DrownedFromZombieConversion";
+	private const LAND_MOVEMENT_SPEED = 0.25;
+	private const UNDERWATER_MOVEMENT_SPEED = 0.10;
 
 	private bool $equipmentInitialized = false;
 	private bool $rangedMode = false;
@@ -63,6 +65,7 @@ class Drowned extends Zombie{
 			(!$fromZombieConversion && mt_rand(1, 400) <= 25);
 
 		parent::initEntity($nbt);
+		$this->setMovementSpeed(self::LAND_MOVEMENT_SPEED, true);
 
 		if(!$this->equipmentInitialized){
 			$this->rollInitialEquipment();
@@ -127,6 +130,10 @@ class Drowned extends Zombie{
 
 	public function canNavigateInWater() : bool{
 		return true;
+	}
+
+	public function getNavigationMovementSpeed(float $requestedSpeed, bool $inWater) : float{
+		return $inWater ? self::UNDERWATER_MOVEMENT_SPEED : self::LAND_MOVEMENT_SPEED;
 	}
 
 	public function isRangedMode() : bool{
