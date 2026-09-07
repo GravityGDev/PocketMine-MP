@@ -34,8 +34,13 @@ use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 
-class Chest extends Transparent implements HorizontalFacing{
+class Chest extends Transparent implements HorizontalFacing, Waterloggable{
 	use FacesOppositePlacingPlayerTrait;
+	use WaterloggableTrait;
+
+	public function canBeWaterlogged() : bool{
+		return true;
+	}
 
 	protected function recalculateCollisionBoxes() : array{
 		//these are slightly bigger than in PC
