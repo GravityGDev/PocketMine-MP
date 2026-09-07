@@ -29,6 +29,7 @@ use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Human;
 use pocketmine\entity\Living;
+use pocketmine\entity\Mob;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\ClientboundPacket;
 use pocketmine\network\mcpe\protocol\EmotePacket;
@@ -103,14 +104,23 @@ final class StandardEntityEventBroadcaster implements EntityEventBroadcaster{
 		$this->sendDataPacket($recipients, RemoveActorPacket::create($entity->getId()));
 	}
 
-	public function onMobMainHandItemChange(array $recipients, Human $mob) : void{
-		//TODO: we could send zero for slot here because remote players don't need to know which slot was selected
-		$inv = $mob->getInventory();
+	public function onMobMainHandItemChange(array $recipients, Human|Mob $mob) : void{
+		if($mob instanceof Human){
+			$inv = $mob->getInventory();
+			$item = $inv->getItemInHand();
+			$selectedSlot = $inv->getHeldItemIndex();
+			$inventorySlot = $selectedSlot;
+		}else{
+			$item = $mob->getMainHandItem();
+			$selectedSlot = 0;
+			$inventorySlot = 0;
+		}
+
 		$this->sendDataPacket($recipients, MobEquipmentPacket::create(
 			$mob->getId(),
-			ItemStackWrapper::legacy($this->typeConverter->coreItemStackToNet($inv->getItemInHand())),
-			$inv->getHeldItemIndex(),
-			$inv->getHeldItemIndex(),
+			ItemStackWrapper::legacy($this->typeConverter->coreItemStackToNet($item)),
+			$selectedSlot,
+			$inventorySlot,
 			ContainerIds::INVENTORY
 		));
 	}
