@@ -27,20 +27,29 @@ use pocketmine\block\utils\CandleTrait;
 use pocketmine\block\utils\Lightable;
 use pocketmine\block\utils\SupportType;
 use pocketmine\data\runtime\RuntimeDataDescriber;
+use pocketmine\entity\projectile\Projectile;
+use pocketmine\item\enchantment\VanillaEnchantments;
 use pocketmine\item\Item;
+use pocketmine\item\ItemTypeIds;
 use pocketmine\math\Axis;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
+use pocketmine\math\RayTraceResult;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\world\BlockTransaction;
+use pocketmine\world\WorldBlockLayerUtils;
+use pocketmine\world\sound\FireExtinguishSound;
 
-class Candle extends Transparent implements Lightable{
+class Candle extends Transparent implements Lightable, Waterloggable{
 	use CandleTrait {
 		describeBlockOnlyState as encodeLitState;
 		getLightLevel as getBaseLightLevel;
+		onInteract as private candleOnInteract;
+		onProjectileHit as private candleOnProjectileHit;
 	}
+	use WaterloggableTrait;
 
 	public const MIN_COUNT = 1;
 	public const MAX_COUNT = 4;
@@ -65,6 +74,10 @@ class Candle extends Transparent implements Lightable{
 
 	public function getLightLevel() : int{
 		return $this->getBaseLightLevel() * $this->count;
+	}
+
+	public function canBeWaterlogged() : bool{
+		return true;
 	}
 
 	protected function recalculateCollisionBoxes() : array{
@@ -118,6 +131,42 @@ class Candle extends Transparent implements Lightable{
 			$this->lit = $existing->lit;
 		}
 		return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
+	}
+
+	public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
+		if($this->isWaterlogged() && (
+			$item->getTypeId() === ItemTypeIds::FIRE_CHARGE ||
+			$item->getTypeId() === ItemTypeIds::FLINT_AND_STEEL ||
+			$item->hasEnchantment(VanillaEnchantments::FIRE_ASPECT())
+		)){
+			return true;
+		}
+
+		return $this->candleOnInteract($item, $face, $clickVector, $player, $returnedItems);
+	}
+
+	public function onNearbyBlockChange() : void{
+		if($this->lit && $this->isWaterlogged()){
+			$this->position->getWorld()->addSound($this->position, new FireExtinguishSound());
+			$this->position->getWorld()->setBlock($this->position, $this->setLit(false));
+		}
+	}
+
+	public function onProjectileHit(Projectile $projectile, RayTraceResult $hitResult) : void{
+		if(!$this->isWaterlogged()){
+			$this->candleOnProjectileHit($projectile, $hitResult);
+		}
+	}
+
+	private function isWaterlogged() : bool{
+		$pos = $this->position;
+		return WorldBlockLayerUtils::getBlockAtLayer(
+			$pos->getWorld(),
+			$pos->getFloorX(),
+			$pos->getFloorY(),
+			$pos->getFloorZ(),
+			1
+		) instanceof Water;
 	}
 
 	public function getDropsForCompatibleTool(Item $item) : array{
