@@ -53,6 +53,7 @@ use pocketmine\math\RayTraceResult;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
+use pocketmine\world\WorldBlockLayerUtils;
 use pocketmine\world\sound\BlazeShootSound;
 use pocketmine\world\sound\FireExtinguishSound;
 use pocketmine\world\sound\FlintSteelSound;
@@ -61,13 +62,14 @@ use function count;
 use function min;
 use function mt_rand;
 
-class Campfire extends Transparent implements Lightable, HorizontalFacing{
+class Campfire extends Transparent implements Lightable, HorizontalFacing, Waterloggable{
 	use HorizontalFacingTrait{
 		HorizontalFacingTrait::describeBlockOnlyState as encodeFacingState;
 	}
 	use LightableTrait{
 		LightableTrait::describeBlockOnlyState as encodeLitState;
 	}
+	use WaterloggableTrait;
 
 	private const UPDATE_INTERVAL_TICKS = 10;
 
@@ -82,6 +84,10 @@ class Campfire extends Transparent implements Lightable, HorizontalFacing{
 	 * @phpstan-var array<int, int>
 	 */
 	protected array $cookingTimes = [];
+
+	public function canBeWaterlogged() : bool{
+		return true;
+	}
 
 	protected function describeBlockOnlyState(RuntimeDataDescriber $w) : void{
 		$this->encodeFacingState($w);
@@ -183,7 +189,7 @@ class Campfire extends Transparent implements Lightable, HorizontalFacing{
 	}
 
 	public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
-		if(!$this->lit){
+		if(!$this->lit && $this->canIgnite()){
 			if($item->getTypeId() === ItemTypeIds::FIRE_CHARGE){
 				$item->pop();
 				$this->ignite();
@@ -196,7 +202,7 @@ class Campfire extends Transparent implements Lightable, HorizontalFacing{
 				$this->ignite();
 				return true;
 			}
-		}elseif($item instanceof Shovel){
+		}elseif($this->lit && $item instanceof Shovel){
 			$item->applyDamage(1);
 			$this->extinguish();
 			return true;
@@ -215,15 +221,14 @@ class Campfire extends Transparent implements Lightable, HorizontalFacing{
 	}
 
 	public function onNearbyBlockChange() : void{
-		if($this->lit && $this->getSide(Facing::UP)->getTypeId() === BlockTypeIds::WATER){
+		if($this->lit && !$this->canIgnite()){
 			$this->extinguish();
-			//TODO: Waterlogging
 		}
 	}
 
 	public function onEntityInside(Entity $entity) : bool{
 		if(!$this->lit){
-			if($entity->isOnFire()){
+			if($entity->isOnFire() && $this->canIgnite()){
 				$this->ignite();
 				return false;
 			}
@@ -240,6 +245,10 @@ class Campfire extends Transparent implements Lightable, HorizontalFacing{
 	}
 
 	public function onScheduledUpdate() : void{
+		if($this->lit && !$this->canIgnite()){
+			$this->extinguish();
+			return;
+		}
 		if($this->lit){
 			$items = $this->inventory->getContents();
 			$furnaceType = $this->getFurnaceType();
@@ -272,6 +281,21 @@ class Campfire extends Transparent implements Lightable, HorizontalFacing{
 			}
 			$this->position->getWorld()->scheduleDelayedBlockUpdate($this->position, self::UPDATE_INTERVAL_TICKS);
 		}
+	}
+
+	private function isWaterlogged() : bool{
+		$pos = $this->position;
+		return WorldBlockLayerUtils::getBlockAtLayer(
+			$pos->getWorld(),
+			$pos->getFloorX(),
+			$pos->getFloorY(),
+			$pos->getFloorZ(),
+			1
+		) instanceof Water;
+	}
+
+	private function canIgnite() : bool{
+		return !$this->isWaterlogged() && !($this->getSide(Facing::UP) instanceof Water);
 	}
 
 	private function extinguish() : void{
