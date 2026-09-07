@@ -49,7 +49,8 @@ use function fmod;
 use function rad2deg;
 use function strlen;
 
-abstract class BaseSign extends Transparent implements WoodMaterial{
+abstract class BaseSign extends Transparent implements WoodMaterial, Waterloggable{
+	use WaterloggableTrait;
 	use WoodTypeTrait;
 
 	protected SignText $text; //TODO: rename this (BC break)
@@ -123,6 +124,7 @@ abstract class BaseSign extends Transparent implements WoodMaterial{
 		if($player !== null){
 			$this->editorEntityRuntimeId = $player->getId();
 		}
+		$this->captureReplacedBlock($blockReplace);
 		return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
 	}
 
