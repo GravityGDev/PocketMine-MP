@@ -99,11 +99,37 @@ class Zombie extends Undead{
 
 	private function convertToDrowned() : void{
 		$location = clone $this->getLocation();
+		$this->dropEquipmentForDrownedConversion();
 		$nbt = $this->saveNBT();
 		Drowned::markZombieConversion($nbt);
 		$drowned = new Drowned($location, $nbt);
 		$this->close();
 		$drowned->spawnToAll();
+	}
+
+	private function dropEquipmentForDrownedConversion() : void{
+		$world = $this->getWorld();
+		$dropPosition = $this->getPosition();
+
+		$mainHand = $this->getMainHandItem();
+		if(!$mainHand->isNull()){
+			$world->dropItem($dropPosition, $mainHand);
+			$this->setMainHandItem(VanillaItems::AIR());
+		}
+
+		$offHand = $this->getOffHandItem();
+		if(!$offHand->isNull()){
+			$world->dropItem($dropPosition, $offHand);
+			$this->setOffHandItem(VanillaItems::AIR());
+		}
+
+		$armorInventory = $this->getArmorInventory();
+		foreach($armorInventory->getContents() as $item){
+			if(!$item->isNull()){
+				$world->dropItem($dropPosition, $item);
+			}
+		}
+		$armorInventory->setContents([]);
 	}
 
 	public function saveNBT() : CompoundTag{
