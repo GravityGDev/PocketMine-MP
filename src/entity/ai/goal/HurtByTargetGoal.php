@@ -21,6 +21,8 @@ namespace pocketmine\entity\ai\goal;
 use pocketmine\entity\Living;
 use pocketmine\entity\Mob;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
+use pocketmine\player\GameMode;
+use pocketmine\player\Player;
 use function spl_object_id;
 
 /**
@@ -41,7 +43,7 @@ final class HurtByTargetGoal extends Goal{
 	}
 
 	public function setAlertTarget(Living $attacker) : void{
-		if($attacker !== $this->mob && $attacker->isAlive() && $attacker->getWorld() === $this->mob->getWorld()){
+		if($attacker !== $this->mob && $this->isValidAttacker($attacker)){
 			$this->alertedAttacker = $attacker;
 		}
 	}
@@ -67,7 +69,7 @@ final class HurtByTargetGoal extends Goal{
 		}
 
 		$attacker = $damageEvent->getDamager();
-		if(!$attacker instanceof Living || !$attacker->isAlive() || $attacker === $this->mob){
+		if(!$attacker instanceof Living || $attacker === $this->mob || !$this->isValidAttacker($attacker)){
 			$this->lastHandledDamageEventId = $eventId;
 			return false;
 		}
@@ -130,6 +132,13 @@ final class HurtByTargetGoal extends Goal{
 	private function isValidAttacker(Living $attacker) : bool{
 		if(!$attacker->isAlive() || $attacker->getWorld() !== $this->mob->getWorld()){
 			return false;
+		}
+
+		if($attacker instanceof Player){
+			$gamemode = $attacker->getGamemode();
+			if($gamemode !== GameMode::SURVIVAL && $gamemode !== GameMode::ADVENTURE){
+				return false;
+			}
 		}
 
 		$position = $this->mob->getPosition();
