@@ -29,8 +29,11 @@ use pocketmine\item\Item;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
+use pocketmine\world\WorldBlockLayerUtils;
 
-class SeaPickle extends Transparent{
+class SeaPickle extends Transparent implements Waterloggable{
+	use WaterloggableTrait;
+
 	public const MIN_COUNT = 1;
 	public const MAX_COUNT = 4;
 
@@ -40,6 +43,10 @@ class SeaPickle extends Transparent{
 	protected function describeBlockOnlyState(RuntimeDataDescriber $w) : void{
 		$w->boundedIntAuto(self::MIN_COUNT, self::MAX_COUNT, $this->count);
 		$w->bool($this->underwater);
+	}
+
+	public function canBeWaterlogged() : bool{
+		return true;
 	}
 
 	public function getCount() : int{ return $this->count; }
@@ -83,12 +90,32 @@ class SeaPickle extends Transparent{
 	}
 
 	public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
-		$this->underwater = false; //TODO: implement this once we have new water logic in place
 		if($blockReplace instanceof SeaPickle && $blockReplace->count < self::MAX_COUNT){
 			$this->count = $blockReplace->count + 1;
+			$this->underwater = $blockReplace->underwater;
+		}else{
+			$this->underwater = $blockReplace instanceof Water && $blockReplace->isSource();
 		}
 
 		return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
+	}
+
+	public function onNearbyBlockChange() : void{
+		$underwater = $this->isWaterlogged();
+		if($this->underwater !== $underwater){
+			$this->position->getWorld()->setBlock($this->position, $this->setUnderwater($underwater));
+		}
+	}
+
+	private function isWaterlogged() : bool{
+		$pos = $this->position;
+		return WorldBlockLayerUtils::getBlockAtLayer(
+			$pos->getWorld(),
+			$pos->getFloorX(),
+			$pos->getFloorY(),
+			$pos->getFloorZ(),
+			1
+		) instanceof Water;
 	}
 
 	public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
