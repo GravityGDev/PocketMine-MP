@@ -37,6 +37,7 @@ use pocketmine\player\Player;
 abstract class Mob extends Living{
 	private const TAG_NO_AI = "NoAI"; //TAG_Byte
 	private const TAG_MAIN_HAND_ITEM = "MainHandItem"; //TAG_Compound
+	private const TAG_OFF_HAND_ITEM = "OffHandItem"; //TAG_Compound
 
 	private GoalSelector $goalSelector;
 	private GoalSelector $targetSelector;
@@ -46,12 +47,15 @@ abstract class Mob extends Living{
 	private GroundNavigation $navigation;
 	private bool $hasAi = true;
 	private Item $mainHandItem;
+	private Item $offHandItem;
 
 	protected function initEntity(CompoundTag $nbt) : void{
 		parent::initEntity($nbt);
 
 		$mainHandItemTag = $nbt->getCompoundTag(self::TAG_MAIN_HAND_ITEM);
 		$this->mainHandItem = $mainHandItemTag !== null ? Item::safeNbtDeserialize($mainHandItemTag, "Mob main-hand item") : VanillaItems::AIR();
+		$offHandItemTag = $nbt->getCompoundTag(self::TAG_OFF_HAND_ITEM);
+		$this->offHandItem = $offHandItemTag !== null ? Item::safeNbtDeserialize($offHandItemTag, "Mob off-hand item") : VanillaItems::AIR();
 		$this->hasAi = $nbt->getByte(self::TAG_NO_AI, 0) === 0;
 		$this->goalSelector = new GoalSelector();
 		$this->targetSelector = new GoalSelector();
@@ -87,6 +91,11 @@ abstract class Mob extends Living{
 		}else{
 			$nbt->removeTag(self::TAG_MAIN_HAND_ITEM);
 		}
+		if(!$this->offHandItem->isNull()){
+			$nbt->setTag(self::TAG_OFF_HAND_ITEM, $this->offHandItem->nbtSerialize());
+		}else{
+			$nbt->removeTag(self::TAG_OFF_HAND_ITEM);
+		}
 		return $nbt;
 	}
 
@@ -106,11 +115,28 @@ abstract class Mob extends Living{
 		);
 	}
 
+	public function getOffHandItem() : Item{
+		return clone $this->offHandItem;
+	}
+
+	public function setOffHandItem(Item $item) : void{
+		if($this->offHandItem->equalsExact($item)){
+			return;
+		}
+
+		$this->offHandItem = clone $item;
+		NetworkBroadcastUtils::broadcastEntityEvent(
+			$this->getViewers(),
+			fn(EntityEventBroadcaster $broadcaster, array $recipients) => $broadcaster->onMobOffHandItemChange($recipients, $this)
+		);
+	}
+
 	protected function sendSpawnPacket(Player $player) : void{
 		parent::sendSpawnPacket($player);
 		$networkSession = $player->getNetworkSession();
 		$entityEventBroadcaster = $networkSession->getEntityEventBroadcaster();
 		$entityEventBroadcaster->onMobMainHandItemChange([$networkSession], $this);
+		$entityEventBroadcaster->onMobOffHandItemChange([$networkSession], $this);
 		$entityEventBroadcaster->onMobArmorChange([$networkSession], $this);
 	}
 
