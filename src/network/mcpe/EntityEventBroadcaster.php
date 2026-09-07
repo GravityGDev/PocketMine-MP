@@ -28,6 +28,7 @@ use pocketmine\entity\effect\EffectInstance;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Human;
 use pocketmine\entity\Living;
+use pocketmine\entity\Mob;
 use pocketmine\network\mcpe\protocol\types\entity\MetadataProperty;
 
 /**
@@ -65,11 +66,9 @@ interface EntityEventBroadcaster{
 	public function onEntityRemoved(array $recipients, Entity $entity) : void;
 
 	/**
-	 * TODO: expand this to more than just humans
-	 *
 	 * @param NetworkSession[] $recipients
 	 */
-	public function onMobMainHandItemChange(array $recipients,Human $mob) : void;
+	public function onMobMainHandItemChange(array $recipients, Human|Mob $mob) : void;
 
 	/**
 	 * @param NetworkSession[] $recipients
