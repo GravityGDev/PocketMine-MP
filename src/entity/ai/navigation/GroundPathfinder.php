@@ -36,13 +36,13 @@ use function floor;
  * with block collision boxes in the mob's two-block-tall body space, and never
  * asks the world to generate chunks just to find a path.
  */
-final class GroundPathfinder{
-	private const MAX_STEP_UP = 1;
-	private const MAX_DROP = 3;
+class GroundPathfinder{
+	protected const MAX_STEP_UP = 1;
+	protected const MAX_DROP = 3;
 
 	public function __construct(
-		private Mob $mob,
-		private int $maxVisitedNodes = 768
+		protected Mob $mob,
+		protected int $maxVisitedNodes = 768
 	){}
 
 	/**
@@ -149,7 +149,7 @@ final class GroundPathfinder{
 		return null;
 	}
 
-	private function findNeighbourY(int $x, int $z, int $fromY) : ?int{
+	protected function findNeighbourY(int $x, int $z, int $fromY) : ?int{
 		if($this->isWalkableNode($x, $fromY, $z)){
 			return $fromY;
 		}
@@ -169,7 +169,7 @@ final class GroundPathfinder{
 		return null;
 	}
 
-	private function findNearestWalkableY(int $x, int $z, int $preferredY) : ?int{
+	protected function findNearestWalkableY(int $x, int $z, int $preferredY) : ?int{
 		foreach([0, 1, -1, 2, -2, 3, -3] as $offset){
 			$y = $preferredY + $offset;
 			if($this->isWalkableNode($x, $y, $z)){
@@ -179,7 +179,7 @@ final class GroundPathfinder{
 		return null;
 	}
 
-	private function isWalkableNode(int $x, int $y, int $z) : bool{
+	protected function isWalkableNode(int $x, int $y, int $z) : bool{
 		if($y <= World::Y_MIN || $y + 1 >= World::Y_MAX){
 			return false;
 		}
@@ -199,7 +199,7 @@ final class GroundPathfinder{
 		return count($world->getBlockAt($x, $y - 1, $z)->getCollisionBoxes()) !== 0;
 	}
 
-	private function heuristic(int $x, int $y, int $z, int $goalX, int $goalY, int $goalZ) : float{
+	protected function heuristic(int $x, int $y, int $z, int $goalX, int $goalY, int $goalZ) : float{
 		return abs($goalX - $x) + abs($goalZ - $z) + (abs($goalY - $y) * 0.35);
 	}
 
@@ -207,7 +207,7 @@ final class GroundPathfinder{
 	 * @param array<string, PathNode> $nodes
 	 * @return list<Vector3>|null
 	 */
-	private function reconstructPath(PathNode $end, array $nodes) : ?array{
+	protected function reconstructPath(PathNode $end, array $nodes) : ?array{
 		$path = [];
 		$current = $end;
 		while($current->parent !== null){
