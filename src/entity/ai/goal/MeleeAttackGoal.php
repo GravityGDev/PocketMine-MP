@@ -18,15 +18,15 @@ declare(strict_types=1);
 
 namespace pocketmine\entity\ai\goal;
 
+use pocketmine\entity\Living;
 use pocketmine\entity\Mob;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
-use pocketmine\player\Player;
 
 final class MeleeAttackGoal extends Goal{
 	private int $attackCooldown = 0;
 
-	/** @phpstan-param (\Closure(Mob, Player) : void)|null $onSuccessfulAttack */
+	/** @phpstan-param (\Closure(Mob, Living) : void)|null $onSuccessfulAttack */
 	public function __construct(
 		private Mob $mob,
 		private float $speed = 0.1,
@@ -51,7 +51,7 @@ final class MeleeAttackGoal extends Goal{
 		}
 
 		$target = $this->mob->getTargetEntity();
-		if(!$target instanceof Player){
+		if(!$target instanceof Living){
 			return;
 		}
 
@@ -93,6 +93,6 @@ final class MeleeAttackGoal extends Goal{
 
 	private function hasValidTarget() : bool{
 		$target = $this->mob->getTargetEntity();
-		return $target instanceof Player && $target->isAlive();
+		return $target instanceof Living && $target->isAlive();
 	}
 }
