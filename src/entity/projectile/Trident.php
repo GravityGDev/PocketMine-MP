@@ -45,6 +45,7 @@ class Trident extends Projectile{
 
 	public const TAG_ITEM = "Trident"; //TAG_Compound
 	protected const TAG_SPAWNED_IN_CREATIVE = "isCreative"; //TAG_Byte
+	private const TAG_PICKUP_ALLOWED = "pickupAllowed"; //TAG_Byte
 
 	public static function getNetworkTypeId() : string{ return EntityIds::THROWN_TRIDENT; }
 
@@ -55,6 +56,7 @@ class Trident extends Projectile{
 	protected bool $canCollide = true;
 
 	protected bool $spawnedInCreative = false;
+	private bool $pickupAllowed = true;
 
 	public function __construct(
 		Location $location,
@@ -79,12 +81,14 @@ class Trident extends Projectile{
 		parent::initEntity($nbt);
 
 		$this->spawnedInCreative = $nbt->getByte(self::TAG_SPAWNED_IN_CREATIVE, 0) === 1;
+		$this->pickupAllowed = $nbt->getByte(self::TAG_PICKUP_ALLOWED, 1) === 1;
 	}
 
 	public function saveNBT() : CompoundTag{
 		$nbt = parent::saveNBT();
 		$nbt->setTag(self::TAG_ITEM, $this->item->nbtSerialize());
 		$nbt->setByte(self::TAG_SPAWNED_IN_CREATIVE, $this->spawnedInCreative ? 1 : 0);
+		$nbt->setByte(self::TAG_PICKUP_ALLOWED, $this->pickupAllowed ? 1 : 0);
 		return $nbt;
 	}
 
@@ -136,12 +140,20 @@ class Trident extends Projectile{
 		$this->item = clone $item;
 	}
 
+	public function isPickupAllowed() : bool{
+		return $this->pickupAllowed;
+	}
+
+	public function setPickupAllowed(bool $pickupAllowed) : void{
+		$this->pickupAllowed = $pickupAllowed;
+	}
+
 	public function canCollideWith(Entity $entity) : bool{
 		return $this->canCollide && $entity->getId() !== $this->ownerId && parent::canCollideWith($entity);
 	}
 
 	public function onCollideWithPlayer(Player $player) : void{
-		if($this->blockHit !== null){
+		if($this->pickupAllowed && $this->blockHit !== null){
 			$this->pickup($player);
 		}
 	}
