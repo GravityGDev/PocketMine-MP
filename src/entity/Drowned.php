@@ -21,9 +21,10 @@ namespace pocketmine\entity;
 use pocketmine\block\Water;
 use pocketmine\entity\ai\goal\DrownedTridentAttackGoal;
 use pocketmine\entity\ai\goal\FleeSunGoal;
+use pocketmine\entity\ai\goal\HurtByTargetGoal;
 use pocketmine\entity\ai\goal\LookAtPlayerGoal;
 use pocketmine\entity\ai\goal\MeleeAttackGoal;
-use pocketmine\entity\ai\goal\NearestPlayerTargetGoal;
+use pocketmine\entity\ai\goal\NearestLivingTargetGoal;
 use pocketmine\entity\ai\goal\RandomLookAroundGoal;
 use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\entity\ai\navigation\AmphibiousPathfinder;
@@ -34,6 +35,7 @@ use pocketmine\item\VanillaItems;
 use pocketmine\item\VanillaSpawnEggs;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
+use pocketmine\player\GameMode;
 use pocketmine\player\Player;
 use pocketmine\world\World;
 use function floor;
@@ -81,7 +83,10 @@ class Drowned extends Zombie{
 	}
 
 	protected function registerGoals() : void{
-		$this->getTargetSelector()->addGoal(1, $this->createPlayerTargetGoal());
+		$this->getTargetSelector()->addGoal(1, new HurtByTargetGoal($this, 35.0, true));
+		$targetFilter = fn(Living $target) : bool => $this->canTargetLiving($target);
+		$this->getTargetSelector()->addGoal(2, new NearestLivingTargetGoal($this, 12.0, $targetFilter, $targetFilter));
+
 		$this->getGoalSelector()->addGoal(2, new FleeSunGoal($this, 0.1));
 		$this->getGoalSelector()->addGoal(3, $this->rangedMode ?
 			new DrownedTridentAttackGoal($this, 0.1, 10.0, 3.0) :
@@ -96,13 +101,14 @@ class Drowned extends Zombie{
 		return new GroundNavigation($this, new AmphibiousPathfinder($this));
 	}
 
-	protected function createPlayerTargetGoal() : NearestPlayerTargetGoal{
-		$targetFilter = fn(Player $player) : bool => $this->canTargetPlayer($player);
-		return new NearestPlayerTargetGoal($this, 12.0, $targetFilter, $targetFilter);
-	}
+	private function canTargetLiving(Living $target) : bool{
+		if($target instanceof Player){
+			$gamemode = $target->getGamemode();
+			return ($gamemode === GameMode::SURVIVAL || $gamemode === GameMode::ADVENTURE) &&
+				($this->isNight() || $this->isEntityInWater($target));
+		}
 
-	private function canTargetPlayer(Player $player) : bool{
-		return $this->isNight() || $this->isEntityInWater($player);
+		return $target instanceof Villager;
 	}
 
 	private function isNight() : bool{
