@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace pocketmine\entity;
 
+use pocketmine\entity\ai\navigation\AmphibiousPathfinder;
+use pocketmine\entity\ai\navigation\GroundNavigation;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
 use pocketmine\item\VanillaSpawnEggs;
@@ -26,6 +28,14 @@ use function mt_rand;
 
 class Drowned extends Zombie{
 	public static function getNetworkTypeId() : string{ return EntityIds::DROWNED; }
+
+	protected function createNavigation() : GroundNavigation{
+		return new GroundNavigation($this, new AmphibiousPathfinder($this));
+	}
+
+	public function canNavigateInWater() : bool{
+		return true;
+	}
 
 	public function getName() : string{
 		return "Drowned";
