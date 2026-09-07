@@ -28,6 +28,7 @@ use pocketmine\entity\ai\goal\RandomLookAroundGoal;
 use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\entity\ai\navigation\AmphibiousPathfinder;
 use pocketmine\entity\ai\navigation\GroundNavigation;
+use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
 use pocketmine\item\VanillaSpawnEggs;
@@ -143,9 +144,25 @@ class Drowned extends Zombie{
 	}
 
 	public function getDrops() : array{
-		return [
+		$drops = [
 			VanillaItems::ROTTEN_FLESH()->setCount(mt_rand(0, 2))
 		];
+
+		$offHand = $this->getOffHandItem();
+		if(!$offHand->isNull()){
+			$drops[] = $offHand;
+		}
+
+		$lastDamageCause = $this->getLastDamageCause();
+		if(
+			$lastDamageCause instanceof EntityDamageByEntityEvent &&
+			$lastDamageCause->getDamager() instanceof Player &&
+			mt_rand(1, 100) <= 11
+		){
+			$drops[] = VanillaItems::COPPER_INGOT();
+		}
+
+		return $drops;
 	}
 
 	public function getPickedItem() : ?Item{
