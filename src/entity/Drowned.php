@@ -20,9 +20,11 @@ namespace pocketmine\entity;
 
 use pocketmine\block\Water;
 use pocketmine\entity\ai\goal\DrownedTridentAttackGoal;
+use pocketmine\entity\ai\goal\FleeSunGoal;
 use pocketmine\entity\ai\goal\LookAtPlayerGoal;
 use pocketmine\entity\ai\goal\MeleeAttackGoal;
 use pocketmine\entity\ai\goal\NearestPlayerTargetGoal;
+use pocketmine\entity\ai\goal\RandomLookAroundGoal;
 use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\entity\ai\navigation\AmphibiousPathfinder;
 use pocketmine\entity\ai\navigation\GroundNavigation;
@@ -79,12 +81,14 @@ class Drowned extends Zombie{
 
 	protected function registerGoals() : void{
 		$this->getTargetSelector()->addGoal(1, $this->createPlayerTargetGoal());
-		$this->getGoalSelector()->addGoal(2, $this->rangedMode ?
+		$this->getGoalSelector()->addGoal(2, new FleeSunGoal($this, 0.1));
+		$this->getGoalSelector()->addGoal(3, $this->rangedMode ?
 			new DrownedTridentAttackGoal($this, 0.1, 10.0, 3.0) :
 			new MeleeAttackGoal($this, 0.1, 3.0, 1.8)
 		);
 		$this->getGoalSelector()->addGoal(7, new RandomStrollGoal($this, 0.08, 8, 80));
-		$this->getGoalSelector()->addGoal(8, new LookAtPlayerGoal($this, 8.0));
+		$this->getGoalSelector()->addGoal(8, new LookAtPlayerGoal($this, 6.0));
+		$this->getGoalSelector()->addGoal(9, new RandomLookAroundGoal($this));
 	}
 
 	protected function createNavigation() : GroundNavigation{
