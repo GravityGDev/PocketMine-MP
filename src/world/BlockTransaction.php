@@ -24,6 +24,8 @@ declare(strict_types=1);
 namespace pocketmine\world;
 
 use pocketmine\block\Block;
+use pocketmine\block\Water;
+use pocketmine\block\Waterloggable;
 use pocketmine\math\Vector3;
 use pocketmine\utils\Utils;
 
@@ -98,7 +100,17 @@ class BlockTransaction{
 		foreach($this->getBlocks() as [$x, $y, $z, $block]){
 			$oldBlock = $this->world->getBlockAt($x, $y, $z);
 			if(!$oldBlock->isSameState($block)){
+				$preserveWater =
+					$this->world instanceof World &&
+					$oldBlock instanceof Water &&
+					$oldBlock->isSource() &&
+					$block instanceof Waterloggable &&
+					$block->canBeWaterlogged();
+
 				$this->world->setBlockAt($x, $y, $z, $block);
+				if($preserveWater){
+					WorldBlockLayerUtils::setBlockAtLayer($this->world, $x, $y, $z, 1, $oldBlock);
+				}
 				$changedBlocks++;
 			}
 		}
