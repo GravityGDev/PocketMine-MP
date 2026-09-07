@@ -19,12 +19,17 @@ declare(strict_types=1);
 namespace pocketmine\entity;
 
 use pocketmine\block\Water;
+use pocketmine\entity\ai\goal\DrownedTridentAttackGoal;
+use pocketmine\entity\ai\goal\LookAtPlayerGoal;
+use pocketmine\entity\ai\goal\MeleeAttackGoal;
 use pocketmine\entity\ai\goal\NearestPlayerTargetGoal;
+use pocketmine\entity\ai\goal\RandomStrollGoal;
 use pocketmine\entity\ai\navigation\AmphibiousPathfinder;
 use pocketmine\entity\ai\navigation\GroundNavigation;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
 use pocketmine\item\VanillaSpawnEggs;
+use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\player\Player;
 use pocketmine\world\World;
@@ -32,7 +37,55 @@ use function floor;
 use function mt_rand;
 
 class Drowned extends Zombie{
+	private const TAG_EQUIPMENT_INITIALIZED = "DrownedEquipmentInitialized";
+	private const TAG_RANGED_MODE = "DrownedRangedMode";
+	private const TAG_FROM_ZOMBIE_CONVERSION = "DrownedFromZombieConversion";
+
+	private bool $equipmentInitialized = false;
+	private bool $rangedMode = false;
+
 	public static function getNetworkTypeId() : string{ return EntityIds::DROWNED; }
+
+	public static function markZombieConversion(CompoundTag $nbt) : void{
+		$nbt->setByte(self::TAG_FROM_ZOMBIE_CONVERSION, 1);
+	}
+
+	protected function initEntity(CompoundTag $nbt) : void{
+		$this->equipmentInitialized = $nbt->getByte(self::TAG_EQUIPMENT_INITIALIZED, 0) !== 0;
+		$fromZombieConversion = $nbt->getByte(self::TAG_FROM_ZOMBIE_CONVERSION, 0) !== 0;
+		$this->rangedMode = $this->equipmentInitialized ?
+			$nbt->getByte(self::TAG_RANGED_MODE, 0) !== 0 :
+			(!$fromZombieConversion && mt_rand(1, 400) <= 25);
+
+		parent::initEntity($nbt);
+
+		if(!$this->equipmentInitialized){
+			$this->rollInitialEquipment();
+			$this->equipmentInitialized = true;
+		}
+	}
+
+	private function rollInitialEquipment() : void{
+		if($this->rangedMode){
+			$this->setMainHandItem(VanillaItems::TRIDENT());
+		}elseif(mt_rand(1, 10000) <= 375){
+			$this->setMainHandItem(VanillaItems::FISHING_ROD());
+		}
+
+		if(mt_rand(1, 100) <= 8){
+			$this->setOffHandItem(VanillaItems::NAUTILUS_SHELL());
+		}
+	}
+
+	protected function registerGoals() : void{
+		$this->getTargetSelector()->addGoal(1, $this->createPlayerTargetGoal());
+		$this->getGoalSelector()->addGoal(2, $this->rangedMode ?
+			new DrownedTridentAttackGoal($this, 0.1, 10.0, 3.0) :
+			new MeleeAttackGoal($this, 0.1, 3.0, 1.8)
+		);
+		$this->getGoalSelector()->addGoal(7, new RandomStrollGoal($this, 0.08, 8, 80));
+		$this->getGoalSelector()->addGoal(8, new LookAtPlayerGoal($this, 8.0));
+	}
 
 	protected function createNavigation() : GroundNavigation{
 		return new GroundNavigation($this, new AmphibiousPathfinder($this));
@@ -63,6 +116,18 @@ class Drowned extends Zombie{
 
 	public function canNavigateInWater() : bool{
 		return true;
+	}
+
+	public function isRangedMode() : bool{
+		return $this->rangedMode;
+	}
+
+	public function saveNBT() : CompoundTag{
+		$nbt = parent::saveNBT();
+		$nbt->setByte(self::TAG_EQUIPMENT_INITIALIZED, $this->equipmentInitialized ? 1 : 0);
+		$nbt->setByte(self::TAG_RANGED_MODE, $this->rangedMode ? 1 : 0);
+		$nbt->removeTag(self::TAG_FROM_ZOMBIE_CONVERSION);
+		return $nbt;
 	}
 
 	public function getName() : string{
