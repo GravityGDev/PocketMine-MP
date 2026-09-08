@@ -120,6 +120,13 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 		parent::__construct($location, $nbt);
 	}
 
+	public function onRandomUpdate() : void{
+		parent::onRandomUpdate();
+		if($this instanceof Player){
+			\pocketmine\world\spawn\NaturalSpawner::getInstance()->tickPlayer($this);
+		}
+	}
+
 	protected function getInitialSizeInfo() : EntitySizeInfo{ return new EntitySizeInfo(1.8, 0.6, 1.62); }
 
 	/**
@@ -171,7 +178,7 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 				return [];
 			}
 			return [
-				PlayerSkinPacket::create($this->getUniqueId(), "", "", $typeConverter->safeToSkinData($this->skin))
+				PlayerSkinPacket::createAdditionEntry($this->uuid, $this->id, $this->getName(), $typeConverter->getSkinAdapter()->toSkinData($this->skin))
 			];
 		});
 	}
