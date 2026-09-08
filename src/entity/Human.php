@@ -178,7 +178,7 @@ class Human extends Living implements ProjectileSource, InventoryHolder{
 				return [];
 			}
 			return [
-				PlayerSkinPacket::createAdditionEntry($this->uuid, $this->id, $this->getName(), $typeConverter->getSkinAdapter()->toSkinData($this->skin))
+				PlayerSkinPacket::create($this->getUniqueId(), "", "", $typeConverter->safeToSkinData($this->skin))
 			];
 		});
 	}
