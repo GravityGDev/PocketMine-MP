@@ -1,0 +1,185 @@
+name: Build Vanilla Preview release
+
+on:
+  push:
+    branches:
+      - vanilla-5.46
+    paths:
+      - .vanilla-release
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vanilla-preview-release
+  cancel-in-progress: false
+
+env:
+  PHP_VERSION: "8.2"
+  VANILLA_PREVIEW: "1"
+
+jobs:
+  build-release:
+    name: Build and publish Vanilla Preview PHAR
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout vanilla preview source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          submodules: true
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@2.37.1
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          tools: composer:v2
+
+      - name: Restore Composer cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/composer/files
+            ~/.cache/composer/vcs
+          key: composer-v2-vanilla-release-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-v2-vanilla-release-
+            composer-v2-
+
+      - name: Install production dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction --classmap-authoritative --ignore-platform-reqs
+
+      - name: Read release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="$(php build/dump-version-info.php base_version)"
+          MCPE_VERSION="$(php build/dump-version-info.php mcpe_version)"
+          MCPE_DISPLAY_VERSION="$(php build/dump-version-info.php mcpe_display_version)"
+          PROTOCOL="$(php -r 'require "vendor/autoload.php"; echo \pocketmine\network\mcpe\protocol\ProtocolInfo::CURRENT_PROTOCOL;')"
+          GIT_SHA="$(git rev-parse HEAD)"
+          RELEASE_TAG="v${VERSION}-vanilla-preview.${VANILLA_PREVIEW}"
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "mcpe_version=${MCPE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "mcpe_display_version=${MCPE_DISPLAY_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "protocol=${PROTOCOL}" >> "$GITHUB_OUTPUT"
+          echo "git_sha=${GIT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build PocketMine-MP.phar
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -dphar.readonly=0 build/server-phar.php \
+            --git "${{ steps.meta.outputs.git_sha }}" \
+            --build "$GITHUB_RUN_NUMBER"
+          test -s PocketMine-MP.phar
+
+      - name: Verify PHAR and create release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -dphar.readonly=0 -r '$phar = new Phar("PocketMine-MP.phar"); $signature = $phar->getSignature(); if($signature === false){fwrite(STDERR, "PHAR has no signature\n"); exit(1);} echo "PHAR signature: " . $signature["hash_type"] . PHP_EOL;'
+          sha256sum PocketMine-MP.phar > PocketMine-MP.phar.sha256
+
+          cat > release-build-info.json <<EOF
+          {
+            "pocketmine_version": "${{ steps.meta.outputs.version }}",
+            "release_channel": "vanilla-preview",
+            "vanilla_preview": ${VANILLA_PREVIEW},
+            "minecraft_network_version": "${{ steps.meta.outputs.mcpe_version }}",
+            "minecraft_display_version": "${{ steps.meta.outputs.mcpe_display_version }}",
+            "bedrock_protocol": ${{ steps.meta.outputs.protocol }},
+            "git_commit": "${{ steps.meta.outputs.git_sha }}",
+            "github_run": $GITHUB_RUN_NUMBER
+          }
+          EOF
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: GravityG-PocketMine-MP-${{ steps.meta.outputs.release_tag }}
+          if-no-files-found: error
+          path: |
+            PocketMine-MP.phar
+            PocketMine-MP.phar.sha256
+            release-build-info.json
+            start.sh
+            start.cmd
+            start.ps1
+
+      - name: Create or update Vanilla Preview release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.meta.outputs.release_tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          MCPE_VERSION: ${{ steps.meta.outputs.mcpe_version }}
+          MCPE_DISPLAY_VERSION: ${{ steps.meta.outputs.mcpe_display_version }}
+          PROTOCOL: ${{ steps.meta.outputs.protocol }}
+          GIT_SHA: ${{ steps.meta.outputs.git_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > release-notes.md <<EOF
+          ## GravityG PocketMine-MP ${VERSION} — Vanilla Preview ${VANILLA_PREVIEW}
+
+          Public test build from the **vanilla-5.46** branch for **Minecraft Bedrock ${MCPE_VERSION}** (display ${MCPE_DISPLAY_VERSION}), protocol **${PROTOCOL}**.
+
+          ### Vanilla restoration included
+          - Goal-based mob AI, pathfinding, line-of-sight sensing and combat controllers
+          - Common Overworld hostile natural spawning, caps, distance checks and despawning
+          - Zombie, Skeleton, Creeper, Spider, Cave Spider, Silverfish, Endermite, Husk and Wither Skeleton core parity
+          - Partial Drowned, Zombie Villager, Stray, Bogged and Parched support
+          - Drowned amphibious navigation foundation and water spawn work
+          - Spawn eggs and Bedrock mappings for restored mobs
+          - Waterlogging, extra block-layer support and liquid placement improvements
+          - Water-sensitive block behaviour improvements
+
+          ### Important
+          This is a **prerelease**, not full vanilla parity. Passive animal spawning, breeding, many biome/dimension pools, villagers/trading/raids, bosses, redstone parity and other major vanilla systems are still being restored.
+
+          See `VANILLA_5_46.md` and `docs/VANILLA_MOB_PARITY.md` in the repository for the live parity tracker.
+
+          ### Downloads
+          - `PocketMine-MP.phar` — server executable
+          - `PocketMine-MP.phar.sha256` — SHA-256 checksum
+          - `release-build-info.json` — exact build/version metadata
+          - `start.sh`, `start.cmd`, `start.ps1` — launcher scripts
+
+          > The PHAR requires a PMMP-compatible PHP build with PocketMine's required native extensions. A normal stock PHP install is not sufficient.
+
+          Built automatically from commit `${GIT_SHA}` by GitHub Actions.
+          EOF
+
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "GravityG PocketMine-MP ${VERSION} — Vanilla Preview ${VANILLA_PREVIEW}" \
+              --notes-file release-notes.md \
+              --prerelease
+            gh release upload "$RELEASE_TAG" \
+              PocketMine-MP.phar \
+              PocketMine-MP.phar.sha256 \
+              release-build-info.json \
+              start.sh start.cmd start.ps1 \
+              --clobber \
+              --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$RELEASE_TAG" \
+              PocketMine-MP.phar \
+              PocketMine-MP.phar.sha256 \
+              release-build-info.json \
+              start.sh start.cmd start.ps1 \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GIT_SHA" \
+              --title "GravityG PocketMine-MP ${VERSION} — Vanilla Preview ${VANILLA_PREVIEW}" \
+              --notes-file release-notes.md \
+              --prerelease
+          fi
