@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - vanilla-5.46
-    paths:
-      - .vanilla-release
   workflow_dispatch:
 
 permissions:
@@ -110,6 +108,7 @@ jobs:
             PocketMine-MP.phar
             PocketMine-MP.phar.sha256
             release-build-info.json
+            pterodactyl/update-vanilla.sh
             start.sh
             start.cmd
             start.ps1
@@ -132,6 +131,8 @@ jobs:
 
           Public test build from the **vanilla-5.46** branch for **Minecraft Bedrock ${MCPE_VERSION}** (display ${MCPE_DISPLAY_VERSION}), protocol **${PROTOCOL}**.
 
+          This prerelease is automatically rebuilt whenever `vanilla-5.46` changes. The release URL stays the same, so existing Pterodactyl test servers can update in place without reinstalling worlds, plugins, or configuration.
+
           ### Vanilla restoration included
           - Goal-based mob AI, pathfinding, line-of-sight sensing and combat controllers
           - Common Overworld hostile natural spawning, caps, distance checks and despawning
@@ -150,8 +151,16 @@ jobs:
           ### Downloads
           - `PocketMine-MP.phar` — server executable
           - `PocketMine-MP.phar.sha256` — SHA-256 checksum
-          - `release-build-info.json` — exact build/version metadata
+          - `release-build-info.json` — exact build/version/commit metadata
+          - `update-vanilla.sh` — safe Pterodactyl in-place updater with backup and checksum verification
           - `start.sh`, `start.cmd`, `start.ps1` — launcher scripts
+
+          ### Pterodactyl update flow
+          1. Stop the test server from the Panel.
+          2. Run `./update-vanilla.sh` in the server directory (or pass the server directory as its first argument).
+          3. Start the server again from the Panel.
+
+          The updater refuses to hot-swap the PHAR while the matching Pterodactyl Docker container is running, keeps rollback backups, verifies SHA-256 before replacing the PHAR, and leaves worlds/plugins/configuration untouched.
 
           > The PHAR requires a PMMP-compatible PHP build with PocketMine's required native extensions. A normal stock PHP install is not sufficient.
 
@@ -168,6 +177,7 @@ jobs:
               PocketMine-MP.phar \
               PocketMine-MP.phar.sha256 \
               release-build-info.json \
+              pterodactyl/update-vanilla.sh \
               start.sh start.cmd start.ps1 \
               --clobber \
               --repo "$GITHUB_REPOSITORY"
@@ -176,6 +186,7 @@ jobs:
               PocketMine-MP.phar \
               PocketMine-MP.phar.sha256 \
               release-build-info.json \
+              pterodactyl/update-vanilla.sh \
               start.sh start.cmd start.ps1 \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GIT_SHA" \
