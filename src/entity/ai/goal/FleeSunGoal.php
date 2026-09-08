@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace pocketmine\entity\ai\goal;
 
+use pocketmine\block\Water;
 use pocketmine\entity\Mob;
 use pocketmine\math\Vector3;
 use function count;
@@ -25,7 +26,7 @@ use function floor;
 use function mt_rand;
 
 /**
- * Looks for nearby shade while an undead mob is burning in daylight.
+ * Looks for nearby shade or water while an undead mob is burning in daylight.
  */
 final class FleeSunGoal extends Goal{
 	private const MAX_SKY_LIGHT_IN_SHELTER = 11;
@@ -81,10 +82,13 @@ final class FleeSunGoal extends Goal{
 			if(!$world->isInWorld($x, $y, $z) || !$world->isChunkLoaded($x >> 4, $z >> 4)){
 				continue;
 			}
-			if($world->getRealBlockSkyLightAt($x, $y + 1, $z) > self::MAX_SKY_LIGHT_IN_SHELTER){
+
+			$feetBlock = $world->getBlockAt($x, $y, $z);
+			$isWater = $feetBlock instanceof Water;
+			if(!$isWater && $world->getRealBlockSkyLightAt($x, $y + 1, $z) > self::MAX_SKY_LIGHT_IN_SHELTER){
 				continue;
 			}
-			if(count($world->getBlockAt($x, $y, $z)->getCollisionBoxes()) !== 0 || count($world->getBlockAt($x, $y + 1, $z)->getCollisionBoxes()) !== 0){
+			if(count($feetBlock->getCollisionBoxes()) !== 0 || count($world->getBlockAt($x, $y + 1, $z)->getCollisionBoxes()) !== 0){
 				continue;
 			}
 

@@ -60,6 +60,14 @@ final class GroundNavigation{
 		}
 	}
 
+	/**
+	 * Checks whether the pathfinder can currently produce a path to a position
+	 * without changing this navigation's active target.
+	 */
+	public function canReach(Vector3 $target) : bool{
+		return $this->pathfinder->findPath($target) !== null;
+	}
+
 	public function stop() : void{
 		$this->target = null;
 		$this->path = [];
