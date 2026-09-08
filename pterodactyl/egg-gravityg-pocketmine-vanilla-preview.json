@@ -1,0 +1,42 @@
+{
+    "_comment": "GravityG PocketMine-MP Vanilla Preview egg for Pterodactyl",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-09-08T02:10:00+00:00",
+    "name": "GravityG PocketMine-MP Vanilla Preview",
+    "author": "GravityGDev",
+    "description": "Test egg for GravityG PocketMine-MP Vanilla Preview builds. Installs the PM5 PHP runtime and the selected prerelease PHAR.",
+    "features": [],
+    "docker_images": {
+        "Debian": "ghcr.io/ptero-eggs/yolks:debian"
+    },
+    "file_denylist": [],
+    "startup": "./bin/php7/bin/php ./PocketMine-MP.phar --no-wizard --disable-ansi",
+    "config": {
+        "files": "{\"server.properties\": {\"parser\": \"properties\", \"find\": {\"server-ip\": \"0.0.0.0\", \"server-port\": \"{{server.build.default.port}}\", \"query.port\": \"{{server.build.default.port}}\"}}}",
+        "startup": "{\"done\": \")! \"}",
+        "logs": "{}",
+        "stop": "stop"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\nset -euo pipefail\n\napt-get update\napt-get install -y curl ca-certificates file tar\n\nmkdir -p /mnt/server\ncd /mnt/server\n\nARCH=\"$(uname -m)\"\ncase \"$ARCH\" in\n  x86_64|amd64) ARCH=\"x86_64\" ;;\n  aarch64|arm64) ARCH=\"arm64\" ;;\n  *) echo \"Unsupported architecture: $ARCH\"; exit 1 ;;\nesac\n\nPHP_URL=\"https://github.com/pmmp/PHP-Binaries/releases/download/pm5-latest/PHP-8.2-Linux-${ARCH}-PM5.tar.gz\"\n\necho \"Downloading PocketMine PM5 PHP runtime...\"\ncurl -fL \"$PHP_URL\" | tar -xz\n\nEXTENSION_DIR=\"$(find bin -type d -name '*debug-zts*' | head -n 1)\"\nif [ -z \"$EXTENSION_DIR\" ]; then\n  echo \"Could not find PocketMine PHP extension directory\"\n  exit 1\nfi\n\nif grep -q '^extension_dir' bin/php7/bin/php.ini; then\n  sed -i \"s#^extension_dir=.*#extension_dir=\\\"$EXTENSION_DIR\\\"#\" bin/php7/bin/php.ini\nelse\n  printf '\\nextension_dir=\"%s\"\\n' \"$EXTENSION_DIR\" >> bin/php7/bin/php.ini\nfi\n\necho \"Downloading GravityG Vanilla Preview PHAR...\"\ncurl -fL \"$PREVIEW_URL\" -o PocketMine-MP.phar\ncurl -fL \"${PREVIEW_URL}.sha256\" -o PocketMine-MP.phar.sha256\nsha256sum -c PocketMine-MP.phar.sha256\n\nif [ ! -f server.properties ]; then\n  curl -fL \"https://raw.githubusercontent.com/pterodactyl/game-eggs/main/minecraft/bedrock/pocketmine_mp/server.properties\" -o server.properties\nfi\n\ntouch banned-ips.txt banned-players.txt ops.txt white-list.txt server.log\nmkdir -p players worlds plugins resource_packs\n\necho \"GravityG PocketMine-MP Vanilla Preview installation complete.\"\n./bin/php7/bin/php -v\n",
+            "container": "ghcr.io/ptero-eggs/installers:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Vanilla Preview PHAR URL",
+            "description": "Direct GitHub release URL for the GravityG PocketMine-MP Vanilla Preview PHAR.",
+            "env_variable": "PREVIEW_URL",
+            "default_value": "https://github.com/GravityGDev/PocketMine-MP/releases/download/v5.46.0-vanilla-preview.1/PocketMine-MP.phar",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:500",
+            "field_type": "text"
+        }
+    ]
+}
