@@ -1,0 +1,6 @@
+channel=vanilla-preview
+preview=1
+branch=vanilla-5.46
+target=5.46.0-dev
+minecraft=1.26.45
+protocol=2169
